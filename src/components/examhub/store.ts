@@ -3,6 +3,7 @@ import { create } from "zustand";
 
 export type TabId =
   | "library"
+  | "schedule"
   | "upload"
   | "create-exam"
   | "my-exams"

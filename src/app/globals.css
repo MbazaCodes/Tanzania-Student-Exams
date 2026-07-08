@@ -41,75 +41,106 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* Tanzania-themed brand palette */
+  --color-navy: var(--navy);
+  --color-navy-dark: var(--navy-dark);
+  --color-green: var(--green);
+  --color-gold: var(--gold);
+  --color-sky: var(--sky);
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* ===== Tanzania ExamHub theme (navy + green + gold) ===== */
+  /* Brand */
+  --navy: #003366;        /* primary authority blue */
+  --navy-dark: #001f3f;   /* deep navy for headers/footer */
+  --green: #00a651;       /* vibrant Tanzania green */
+  --gold: #f5a623;        /* warm gold accent */
+  --sky: #0066cc;         /* bright action blue */
+
+  /* Surfaces */
+  --background: #f0f6ff;          /* soft blue-tinted page bg */
+  --foreground: #1a2233;          /* near-black text */
+  --card: #ffffff;
+  --card-foreground: #1a2233;
+  --popover: #ffffff;
+  --popover-foreground: #1a2233;
+
+  /* Primary = navy */
+  --primary: #003366;
+  --primary-foreground: #ffffff;
+
+  /* Secondary = soft green tint */
+  --secondary: #e8f5ec;
+  --secondary-foreground: #00553a;
+
+  --muted: #eef2f8;
+  --muted-foreground: #5b6b82;
+  --accent: #e8f5ec;
+  --accent-foreground: #00553a;
+
+  --destructive: #d93b4a;
+
+  --border: #d6e0ee;
+  --input: #d6e0ee;
+  --ring: #003366;
+
+  --chart-1: #003366;
+  --chart-2: #00a651;
+  --chart-3: #f5a623;
+  --chart-4: #0066cc;
+  --chart-5: #d93b4a;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a2233;
+  --sidebar-primary: #003366;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8f5ec;
+  --sidebar-accent-foreground: #00553a;
+  --sidebar-border: #d6e0ee;
+  --sidebar-ring: #003366;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --navy: #1d4ed8;
+  --navy-dark: #0b1220;
+  --green: #22c55e;
+  --gold: #fbbf24;
+  --sky: #3b82f6;
+
+  --background: #0b1220;
+  --foreground: #e7eef8;
+  --card: #111a2e;
+  --card-foreground: #e7eef8;
+  --popover: #111a2e;
+  --popover-foreground: #e7eef8;
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --secondary: #16223a;
+  --secondary-foreground: #e7eef8;
+  --muted: #16223a;
+  --muted-foreground: #93a4bd;
+  --accent: #16223a;
+  --accent-foreground: #e7eef8;
+  --destructive: #f87171;
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --ring: #1d4ed8;
+  --chart-1: #1d4ed8;
+  --chart-2: #22c55e;
+  --chart-3: #fbbf24;
+  --chart-4: #3b82f6;
+  --chart-5: #f87171;
+  --sidebar: #111a2e;
+  --sidebar-foreground: #e7eef8;
+  --sidebar-primary: #1d4ed8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #16223a;
+  --sidebar-accent-foreground: #e7eef8;
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: #1d4ed8;
 }
 
 @layer base {
@@ -120,3 +151,63 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ===== Tanzania-themed utility helpers ===== */
+.bg-navy { background-color: var(--navy); }
+.bg-navy-dark { background-color: var(--navy-dark); }
+.bg-green { background-color: var(--green); }
+.bg-gold { background-color: var(--gold); }
+.bg-sky { background-color: var(--sky); }
+.text-navy { color: var(--navy); }
+.text-green { color: var(--green); }
+.text-gold { color: var(--gold); }
+.text-sky { color: var(--sky); }
+.border-navy { border-color: var(--navy); }
+.border-green { border-color: var(--green); }
+.ring-navy { --tw-ring-color: var(--navy); }
+
+/* Hero / header gradient — navy → deeper navy with a green underline accent */
+.bg-hero {
+  background: linear-gradient(135deg, #003366 0%, #001f3f 60%, #00264d 100%);
+}
+.bg-hero-green {
+  background: linear-gradient(135deg, #00a651 0%, #007a3d 100%);
+}
+.bg-hero-gold {
+  background: linear-gradient(135deg, #f5a623 0%, #d4860f 100%);
+}
+
+/* The Tanzanian flag accent bar (green / yellow / black / blue) — used as a top ribbon */
+.flag-bar {
+  background: linear-gradient(
+    to right,
+    #1eb53a 0%, #1eb53a 40%,
+    #fcd116 40%, #fcd116 45%,
+    #000000 45%, #000000 47%,
+    #fcd116 47%, #fcd116 52%,
+    #00a3dd 52%, #00a3dd 100%
+  );
+}
+
+/* Subtle card shadow used across the dashboard */
+.shadow-card {
+  box-shadow: 0 1px 2px rgba(0, 51, 102, 0.06), 0 4px 16px rgba(0, 51, 102, 0.08);
+}
+.shadow-card-hover {
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.12), 0 12px 32px rgba(0, 51, 102, 0.12);
+}
+
+/* Live countdown timer digit style */
+.timer-digit {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Custom scrollbar for long lists */
+.scroll-soft::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-soft::-webkit-scrollbar-track { background: transparent; }
+.scroll-soft::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+.scroll-soft::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }

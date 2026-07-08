@@ -13,6 +13,8 @@ import {
   Menu,
   X,
   RefreshCw,
+  CalendarClock,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +37,7 @@ import { TakeExam } from "./tabs/TakeExam";
 import { ReviewSubmissions } from "./tabs/ReviewSubmissions";
 import { MyResults } from "./tabs/MyResults";
 import { AdminOverview } from "./tabs/AdminOverview";
+import { ScheduleTab } from "./tabs/ScheduleTab";
 
 interface NavItem {
   id: TabId;
@@ -45,6 +48,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { id: "library", label: "Papers Library", icon: Library, roles: ["student", "teacher", "school_admin", "super_admin"] },
+  { id: "schedule", label: "Schedule & Alerts", icon: CalendarClock, roles: ["student", "teacher", "school_admin", "super_admin"] },
   { id: "upload", label: "Upload Paper", icon: Upload, roles: ["teacher", "school_admin", "super_admin"] },
   { id: "create-exam", label: "Create Exam", icon: FilePlus2, roles: ["teacher", "school_admin", "super_admin"] },
   { id: "my-exams", label: "My Exams", icon: ClipboardList, roles: ["teacher", "school_admin", "super_admin"] },
@@ -62,10 +66,10 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 const ROLE_COLOR: Record<string, string> = {
-  student: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  teacher: "bg-amber-100 text-amber-700 border-amber-200",
-  school_admin: "bg-violet-100 text-violet-700 border-violet-200",
-  super_admin: "bg-rose-100 text-rose-700 border-rose-200",
+  student: "bg-green/15 text-green border-green/30",
+  teacher: "bg-gold/15 text-gold border-gold/40",
+  school_admin: "bg-sky/15 text-sky border-sky/30",
+  super_admin: "bg-navy/10 text-navy border-navy/30",
 };
 
 export function ExamHubApp() {
@@ -119,9 +123,10 @@ export function ExamHubApp() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-muted/30">
+      <div className="min-h-screen flex flex-col bg-background">
+        <div className="flag-bar h-1 w-full" />
         <div className="flex-1 flex items-center justify-center">
-          <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="flex items-center gap-3 text-navy font-medium">
             <RefreshCw className="h-5 w-5 animate-spin" />
             Loading ExamHub…
           </div>
@@ -137,39 +142,51 @@ export function ExamHubApp() {
   const activeTab = visibleNav.some((n) => n.id === tab) ? tab : "library";
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/30">
+    <div className="min-h-screen flex flex-col bg-background">
       <Toaster richColors position="top-right" />
+      {/* Tanzania flag accent ribbon */}
+      <div className="flag-bar h-1 w-full" />
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <header className="sticky top-0 z-40 border-b border-navy/15 bg-hero text-white shadow-card">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
           <button
-            className="md:hidden rounded-md p-2 hover:bg-accent"
+            className="md:hidden rounded-md p-2 hover:bg-white/10 text-white"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle navigation"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <div className="flex items-center gap-2 font-semibold">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="flex items-center gap-2.5 font-semibold">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green text-white shadow-sm ring-2 ring-white/20">
               <GraduationCap className="h-5 w-5" />
             </div>
             <div className="leading-tight">
-              <div className="text-base">ExamHub</div>
-              <div className="text-[11px] font-normal text-muted-foreground">Papers &amp; Exams Platform</div>
+              <div className="text-base tracking-tight">ExamHub <span className="text-gold font-bold">Tanzania</span></div>
+              <div className="text-[11px] font-normal text-white/70">Papers · Exams · Timetable</div>
             </div>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={handleSeed} className="hidden sm:inline-flex">
-              <RefreshCw className="mr-1.5 h-4 w-4" /> Reset demo
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTab("schedule")}
+              className="hidden sm:inline-flex text-white hover:bg-white/10 hover:text-white relative"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="ml-1.5 hidden lg:inline">Alerts</span>
+              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2 rounded-full bg-gold ring-2 ring-navy" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleSeed} className="hidden sm:inline-flex text-white hover:bg-white/10 hover:text-white">
+              <RefreshCw className="mr-1.5 h-4 w-4" /> Reset
             </Button>
             {user && (
-              <Badge variant="outline" className={`${ROLE_COLOR[role]} hidden sm:inline-flex`}>
+              <Badge variant="outline" className={`${ROLE_COLOR[role]} hidden sm:inline-flex border`}>
                 {ROLE_LABEL[role]}
               </Badge>
             )}
             <Select value={user?.id ?? ""} onValueChange={handleSwitch}>
-              <SelectTrigger className="w-[200px] sm:w-[240px]">
+              <SelectTrigger className="w-[180px] sm:w-[240px] bg-white/10 border-white/20 text-white hover:bg-white/15">
                 <SelectValue placeholder="Switch user" />
               </SelectTrigger>
               <SelectContent>
@@ -188,12 +205,14 @@ export function ExamHubApp() {
       {/* Body: sidebar + content */}
       <div className="mx-auto flex w-full max-w-7xl flex-1">
         {/* Sidebar (desktop) */}
-        <aside className="hidden md:flex w-60 shrink-0 flex-col gap-1 border-r bg-card/50 p-3">
+        <aside className="hidden md:flex w-60 shrink-0 flex-col gap-1 border-r border-border bg-card p-3">
           {visibleNav.map((n) => (
             <NavButton key={n.id} item={n} active={activeTab === n.id} onClick={() => setTab(n.id)} />
           ))}
-          <div className="mt-auto rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">Role-based access</p>
+          <div className="mt-auto rounded-lg border border-green/20 bg-green/5 p-3 text-xs text-muted-foreground">
+            <p className="font-medium text-navy flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-green" /> Role-based access
+            </p>
             <p className="mt-1">
               Switch users to see how students, teachers, school admins and the super admin each experience the platform.
             </p>
@@ -235,15 +254,15 @@ export function ExamHubApp() {
       </div>
 
       {/* Sticky footer */}
-      <footer className="mt-auto border-t bg-card">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-sm text-muted-foreground sm:flex-row">
+      <footer className="mt-auto bg-navy-dark text-white/80">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-sm sm:flex-row">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-4 w-4" />
-            <span>ExamHub — Papers Library &amp; Exam Management</span>
+            <GraduationCap className="h-4 w-4 text-gold" />
+            <span>ExamHub Tanzania — Papers, Exams &amp; Timetable</span>
           </div>
           <div className="flex items-center gap-4">
-            <span>NECTA · Mocks · School Exams</span>
-            <span className="hidden sm:inline">Demo build</span>
+            <span className="text-white/60">NECTA · Mocks · School Exams</span>
+            <span className="hidden sm:inline text-white/50">Official demo build</span>
           </div>
         </div>
       </footer>
@@ -266,11 +285,11 @@ function NavButton({
       onClick={onClick}
       className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
         active
-          ? "bg-primary text-primary-foreground shadow-sm"
-          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          ? "bg-navy text-white shadow-card"
+          : "text-muted-foreground hover:bg-green/10 hover:text-navy"
       }`}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className={`h-4 w-4 ${active ? "text-gold" : ""}`} />
       {item.label}
     </button>
   );
@@ -280,6 +299,8 @@ function TabContent({ tab, user }: { tab: TabId; user: User }) {
   switch (tab) {
     case "library":
       return <PapersLibrary user={user} />;
+    case "schedule":
+      return <ScheduleTab user={user} />;
     case "upload":
       return <UploadPaper user={user} />;
     case "create-exam":

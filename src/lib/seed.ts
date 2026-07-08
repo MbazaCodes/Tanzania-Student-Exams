@@ -308,5 +308,100 @@ export async function seedExamHub() {
     });
   }
 
-  return { school, users: users.length, papers: papers.length };
+  // 7. Scheduled timetable items — quiz of the day, exam, test, assignment
+  const now = new Date();
+  const at = (h: number, m: number, dayOffset = 0) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + dayOffset);
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+  const scheduleItems = [
+    {
+      id: "sched-quiz-today",
+      title: "Biology Quiz of the Day",
+      type: "quiz_of_day",
+      subject: "Biology",
+      level: "form_4",
+      description: "Daily 5-minute revision quiz. Auto-marks instantly!",
+      scheduledAt: at(9, 0, 0),
+      durationMins: 15,
+      status: "scheduled",
+      examId: examId,
+      createdById: teacher.id,
+      schoolId: school.id,
+    },
+    {
+      id: "sched-test-soon",
+      title: "Chemistry Term Test",
+      type: "test",
+      subject: "Chemistry",
+      level: "form_6",
+      description: "Covers organic chemistry chapters 1–4.",
+      scheduledAt: at(11, 30, 0),
+      durationMins: 90,
+      status: "scheduled",
+      createdById: teacher.id,
+      schoolId: school.id,
+    },
+    {
+      id: "sched-exam-tomorrow",
+      title: "Mathematics CSEE Mock",
+      type: "exam",
+      subject: "Mathematics",
+      level: "form_4",
+      description: "Full mock exam under exam conditions.",
+      scheduledAt: at(8, 0, 1),
+      durationMins: 180,
+      status: "scheduled",
+      examId: examId2,
+      createdById: schoolAdmin.id,
+      schoolId: school.id,
+    },
+    {
+      id: "sched-assign-3days",
+      title: "Physics Assignment — Motion",
+      type: "assignment",
+      subject: "Physics",
+      level: "form_4",
+      description: "Submit solutions to problems 1–10 by Friday.",
+      scheduledAt: at(23, 59, 3),
+      durationMins: 10080, // 7 days window
+      status: "scheduled",
+      createdById: teacher.id,
+      schoolId: school.id,
+    },
+    {
+      id: "sched-quiz-yesterday",
+      title: "English Quiz of the Day",
+      type: "quiz_of_day",
+      subject: "English",
+      level: "form_2",
+      description: "Yesterday's daily quiz (completed).",
+      scheduledAt: at(9, 0, -1),
+      durationMins: 15,
+      status: "completed",
+      createdById: teacher.id,
+      schoolId: school.id,
+    },
+  ];
+  for (const s of scheduleItems) {
+    await db.scheduleItem.upsert({
+      where: { id: s.id },
+      update: {
+        title: s.title,
+        type: s.type,
+        subject: s.subject,
+        level: s.level ?? null,
+        description: s.description ?? null,
+        scheduledAt: s.scheduledAt,
+        durationMins: s.durationMins,
+        status: s.status,
+        examId: s.examId ?? null,
+      },
+      create: s,
+    });
+  }
+
+  return { school, users: users.length, papers: papers.length, scheduleItems: scheduleItems.length };
 }

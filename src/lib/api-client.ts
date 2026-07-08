@@ -2,6 +2,7 @@
 import type {
   Exam,
   Paper,
+  ScheduleItem,
   Submission,
   User,
 } from "./types";
@@ -96,4 +97,21 @@ export const api = {
         role: string;
       } | null;
     }>("/api/stats"),
+
+  listSchedule: (params: Record<string, string> = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return jfetch<{ items: ScheduleItem[] }>(`/api/schedule${q ? `?${q}` : ""}`);
+  },
+  createSchedule: (body: Record<string, unknown>) =>
+    jfetch<{ ok: boolean; item: ScheduleItem }>("/api/schedule", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateSchedule: (id: string, body: Partial<ScheduleItem>) =>
+    jfetch<{ ok: boolean; item: ScheduleItem }>(`/api/schedule/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteSchedule: (id: string) =>
+    jfetch<{ ok: boolean }>(`/api/schedule/${id}`, { method: "DELETE" }),
 };

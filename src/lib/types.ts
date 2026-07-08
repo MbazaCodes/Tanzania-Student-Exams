@@ -18,6 +18,28 @@ export type SubmissionStatus =
   | "reviewed"
   | "published";
 
+export type ScheduleType = "quiz_of_day" | "exam" | "test" | "assignment";
+export type ScheduleStatus = "scheduled" | "live" | "completed" | "cancelled";
+
+export interface ScheduleItem {
+  id: string;
+  title: string;
+  type: ScheduleType;
+  subject: string;
+  level: string | null;
+  description: string | null;
+  scheduledAt: string;
+  durationMins: number;
+  status: ScheduleStatus;
+  examId: string | null;
+  createdById: string;
+  createdBy?: User;
+  schoolId: string | null;
+  school?: School | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -158,6 +180,18 @@ export const QUESTION_TYPES: {
   { value: "truefalse", label: "True / False", hint: "Auto-marked" },
   { value: "short", label: "Short Answer", hint: "Auto-marked (match), teacher can override" },
   { value: "essay", label: "Essay", hint: "Teacher-marked only" },
+];
+
+export const SCHEDULE_TYPES: {
+  value: ScheduleType;
+  label: string;
+  color: string;
+  icon: string;
+}[] = [
+  { value: "quiz_of_day", label: "Quiz of the Day", color: "green", icon: "sparkles" },
+  { value: "exam", label: "Exam", color: "navy", icon: "file" },
+  { value: "test", label: "Test", color: "sky", icon: "clipboard" },
+  { value: "assignment", label: "Assignment", color: "gold", icon: "book" },
 ];
 
 export function gradeFor(percentage: number): string {
