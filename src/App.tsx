@@ -81,9 +81,7 @@ export default function App() {
             {mobileOpen?<X className="h-5 w-5"/>:<Menu className="h-5 w-5"/>}
           </button>
           <div className="flex items-center gap-2.5 font-semibold">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg shadow-sm ring-2 ring-white/20" style={{background:'var(--green)'}}>
-              <GraduationCap className="h-5 w-5 text-white"/>
-            </div>
+            <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-9 w-9 object-contain drop-shadow" />
             <div className="leading-tight">
               <div className="text-base tracking-tight">ExamHub <span style={{color:'var(--gold)'}} className="font-bold">Tanzania</span></div>
               <div className="text-[11px] font-normal text-white/70">Exams · Quizzes · Daily Assignments</div>
@@ -148,7 +146,7 @@ export default function App() {
 
       <footer className="mt-auto text-white/80" style={{background:'var(--navy-dark)'}}>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-sm sm:flex-row">
-          <div className="flex items-center gap-2"><GraduationCap className="h-4 w-4" style={{color:'var(--gold)'}}/><span>ExamHub Tanzania — Exams, Quizzes, Daily Assignments</span></div>
+          <div className="flex items-center gap-2"><img src="/tz-coat-of-arms.png" alt="" className="h-4 w-4 object-contain" /><span>ExamHub Tanzania — Exams, Quizzes, Daily Assignments</span></div>
           <span className="text-white/50 text-xs">Powered by Supabase · NECTA · Mocks · School Exams</span>
         </div>
       </footer>
