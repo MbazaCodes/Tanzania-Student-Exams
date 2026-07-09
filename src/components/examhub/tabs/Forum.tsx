@@ -2,12 +2,10 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import {
   MessageSquare, ChevronRight, ArrowLeft, Plus, Heart, Reply,
   CheckCircle2, Loader2, Send, Trash2, Pin, Lock, Unlock,
-  Eye, ThumbsUp, ImageIcon, Paperclip, X, Star, Search,
-  Users, BookOpen, Shield, Clock,
+  Eye, ImageIcon, Paperclip, X, BookOpen, Clock,
 } from 'lucide-react'
 import {
   Button, Input, Textarea, Badge, Card, CardContent,
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/index'
 import {
   listForumChannels, listForumTopics, getForumTopic, createForumTopic,

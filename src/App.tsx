@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import {
   Library, Upload, FilePlus2, ClipboardList, PenSquare,
   CheckCircle2, BarChart3, ShieldCheck, GraduationCap,
-  Menu, X, CalendarClock, Bell, Wifi, User as UserIcon, LogOut, MessageSquare, Video,
+  Menu, X, CalendarClock, Bell, User as UserIcon, LogOut, MessageSquare, Video,
 } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { getCurrentUser, getAllUsers, setSessionUid, signOut, subscribeToScheduleUpdates } from '@/lib/api'
 import type { User as UserType } from '@/lib/types'
 import { ROLE_LABEL } from '@/lib/types'
 import { useStore, type TabId } from '@/lib/store'
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/index'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/index'
 import { PapersLibrary } from '@/components/examhub/tabs/PapersLibrary'
 import { UploadPaper } from '@/components/examhub/tabs/UploadPaper'
 import { CreateExam } from '@/components/examhub/tabs/CreateExam'
