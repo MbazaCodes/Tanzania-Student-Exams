@@ -216,7 +216,7 @@ export function LandingPage() {
               { step: '03', icon: BarChart3, title: 'Get Instant Results', desc: 'Objective questions marked instantly. See correct answers with explanations immediately after each question.', color: 'var(--gold)' },
             ].map((s, i) => (
               <div key={s.step} className="relative">
-                {i < 2 && <div className="hidden md:block absolute top-10 left-full w-full h-px border-t-2 border-dashed border-gray-200 -translate-x-8 z-0" />}
+                {i < 2 && <div className="hidden md:block absolute top-10 left-full w-full h-px bg-gray-200/30 -translate-x-8 z-0" />}
                 <div className="relative z-10 text-center">
                   <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl mb-6 shadow-lg" style={{ background: `${s.color}12` }}>
                     <s.icon className="h-9 w-9" style={{ color: s.color }} />
