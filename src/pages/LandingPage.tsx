@@ -15,7 +15,7 @@ export function LandingPage() {
       <nav className="sticky top-0 z-50 border-b border-white/10 backdrop-blur-md" style={{ background: 'rgba(0,31,63,0.97)' }}>
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-9 w-9 object-contain drop-shadow" />
+            <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-9 w-9 object-contain"/>
             <div className="leading-tight">
               <div className="text-base font-bold text-white tracking-tight">
                 ExamHub <span style={{ color: 'var(--gold)' }}>Tanzania</span>
@@ -50,7 +50,7 @@ export function LandingPage() {
             <div className="text-white pb-16 lg:pb-24">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold mb-6 border border-yellow-400/30" style={{ background: 'rgba(245,166,35,0.15)', color: 'var(--gold)' }}>
-                <img src="/tz-coat-of-arms.png" alt="" className="h-4 w-4 object-contain" />
+                <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-4 w-4 object-contain"/>
                 Tanzania's #1 Digital Exam Platform
               </div>
 
@@ -332,7 +332,7 @@ export function LandingPage() {
       <section className="py-24 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #001f3f 0%, #003366 60%, #00a651 100%)' }}>
         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '28px 28px' }} />
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 text-center text-white">
-          <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-16 w-16 object-contain mx-auto mb-6 drop-shadow-xl" />
+          <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-16 w-16 object-contain mx-auto mb-6"/>
           <h2 className="text-3xl sm:text-5xl font-black mb-6 leading-tight">
             Start Your Journey to<br /><span style={{ color: 'var(--gold)' }}>Exam Excellence</span>
           </h2>
@@ -357,7 +357,7 @@ export function LandingPage() {
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 mb-10">
             <div>
               <div className="flex items-center gap-2.5 mb-4">
-                <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-8 w-8 object-contain" />
+                <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-8 w-8 object-contain"/>
                 <span className="font-bold text-white">ExamHub <span style={{ color: 'var(--gold)' }}>TZ</span></span>
               </div>
               <p className="text-sm leading-relaxed">Tanzania's national digital exam preparation platform. UHURU NA UMOJA.</p>

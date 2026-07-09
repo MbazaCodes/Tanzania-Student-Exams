@@ -66,7 +66,7 @@ export function AuthPage() {
       {/* Left panel - branding */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 text-white">
         <Link to="/" className="flex items-center gap-3">
-          <img src="/tz-coat-of-arms.png" alt="" className="h-10 w-10 object-contain" />
+          <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-10 w-10 object-contain"/>
           <div>
             <div className="text-xl font-bold">ExamHub <span style={{ color: 'var(--gold)' }}>Tanzania</span></div>
             <div className="text-xs text-white/60">Mitihani · Maswali · Matokeo</div>
@@ -91,7 +91,7 @@ export function AuthPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8 text-white">
-            <img src="/tz-coat-of-arms.png" alt="" className="h-8 w-8 object-contain" />
+            <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-8 w-8 object-contain"/>
             <span className="font-bold">ExamHub <span style={{ color: 'var(--gold)' }}>Tanzania</span></span>
           </div>
 

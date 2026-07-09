@@ -120,7 +120,7 @@ export default function App() {
           </button>
 
           <button onClick={() => navigate('/')} className="flex items-center gap-2.5 font-semibold hover:opacity-90 transition-opacity">
-            <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-9 w-9 object-contain drop-shadow"/>
+            <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-9 w-9 object-contain"/>
             <div className="leading-tight">
               <div className="text-base tracking-tight">ExamHub <span className="font-bold" style={{ color: 'var(--gold)' }}>Tanzania</span></div>
               <div className="text-[11px] font-normal text-white/60 hidden sm:block">Exams · Quizzes · Assignments</div>
@@ -226,7 +226,7 @@ export default function App() {
       <footer className="mt-auto text-white/70" style={{ background: 'var(--navy-dark)' }}>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-sm sm:flex-row">
           <div className="flex items-center gap-2">
-            <img src="/tz-coat-of-arms.png" alt="" className="h-4 w-4 object-contain"/>
+            <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-4 w-4 object-contain"/>
             <span>ExamHub Tanzania — Exams, Quizzes, Daily Assignments</span>
           </div>
           <span className="text-white/40 text-xs">Powered by Supabase · NECTA · All Levels</span>
