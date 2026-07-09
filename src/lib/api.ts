@@ -6,31 +6,32 @@ import { gradeFor, type Exam, type Paper, type ScheduleItem, type Submission, ty
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function signUp(email: string, password: string, name: string, role = 'student') {
-  // Try admin.createUser first (bypasses email confirmation, works even when signups disabled)
-  try {
-    const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.createUser({
-      email, password, email_confirm: true,
-      user_metadata: { name, role },
-    })
-    if (adminError) throw new Error(adminError.message)
-    if (adminData.user) {
-      await supabaseAdmin.from('users').upsert({
-        id: adminData.user.id, email, name, role,
-      }, { onConflict: 'id' })
-      return adminData.user
-    }
-  } catch (adminErr) {
-    // Fallback: standard signUp (works when email auth enabled)
-    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name, role } } })
-    if (error) throw new Error(error.message)
-    if (data.user) {
-      await supabaseAdmin.from('users').upsert({
-        id: data.user.id, email, name, role,
-      }, { onConflict: 'id' })
-      return data.user
-    }
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name, role },
+    },
+  })
+
+  if (error) {
+    console.error('Supabase signUp error', error)
+    const message = error.message || 'Signup failed'
+    const details = error.details ? ` (${error.details})` : ''
+    throw new Error(`${message}${details}`)
   }
-  return null
+
+  if (data.user) {
+    await supabaseAdmin.from('users').upsert({
+      id: data.user.id,
+      email,
+      name,
+      role,
+    }, { onConflict: 'id' })
+    return data.user
+  }
+
+  throw new Error('Signup did not return a user. Please check Supabase auth settings.')
 }
 
 export async function signIn(email: string, password: string) {

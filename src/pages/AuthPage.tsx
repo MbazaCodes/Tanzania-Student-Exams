@@ -28,10 +28,9 @@ function PillSelect({ options, selected, onChange, max }: {
           className={cn(
             'rounded-full px-2.5 py-1 text-xs font-medium border transition-colors',
             selected.includes(o)
-              ? 'border-transparent text-white'
+              ? 'border-transparent bg-green text-white'
               : 'border-white/20 text-white/60 hover:border-white/50 hover:text-white'
-          )}
-          style={selected.includes(o) ? { background: 'var(--green)' } : {}}>
+          )}>
           {o}
         </button>
       ))}
@@ -40,18 +39,19 @@ function PillSelect({ options, selected, onChange, max }: {
 }
 
 // native dropdown styled for dark bg
-function DarkSelect({ label, value, onChange, options, placeholder }: {
+function DarkSelect({ label, value, onChange, options, placeholder, id }: {
   label: string; value: string; onChange: (v: string) => void
   options: string[]; placeholder?: string
+  id?: string
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-white/80 mb-1.5">{label}</label>
+      <label htmlFor={id} className="block text-sm font-medium text-white/80 mb-1.5">{label}</label>
       <div className="relative">
-        <select value={value} onChange={e => onChange(e.target.value)}
+        <select id={id} value={value} onChange={e => onChange(e.target.value)}
           className="w-full appearance-none rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30 pr-10">
-          {placeholder && <option value="" style={{ color: '#333' }}>{placeholder}</option>}
-          {options.map(o => <option key={o} value={o} style={{ color: '#333' }}>{o}</option>)}
+          {placeholder && <option value="" className="text-slate-900">{placeholder}</option>}
+          {options.map(o => <option key={o} value={o} className="text-slate-900">{o}</option>)}
         </select>
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 pointer-events-none"/>
       </div>
@@ -160,24 +160,24 @@ export function AuthPage() {
   const switchToRegister = () => { setMode('register'); setRegStep('role') }
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #001f3f 0%, #003366 100%)' }}>
+    <div className="min-h-screen flex auth-background">
 
       {/* ── Left branding panel ── */}
       <div className="hidden lg:flex flex-col justify-between w-5/12 p-12 text-white">
         <Link to="/" className="flex items-center gap-3">
           <img src="/tz-coat-of-arms.png" alt="" className="h-10 w-10 object-contain"/>
           <div>
-            <div className="text-xl font-bold">ExamHub <span style={{ color: 'var(--gold)' }}>Tanzania</span></div>
+            <div className="text-xl font-bold">ExamHub <span className="text-gold">Tanzania</span></div>
             <div className="text-xs text-white/60">Mitihani · Maswali · Matokeo</div>
           </div>
         </Link>
-        <img src="/hero.png" alt="" className="w-full max-w-sm mx-auto object-contain" style={{ maxHeight: '360px' }}/>
+        <img src="/hero.png" alt="" className="w-full max-w-sm mx-auto object-contain max-h-90" />
         <div>
           <p className="text-white/70 italic leading-relaxed mb-3">
             "ExamHub helped me improve from D to B in Mathematics. The per-question timers really work!"
           </p>
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: 'var(--green)' }}>A</div>
+            <div className="h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm bg-green">A</div>
             <div><p className="font-medium text-sm">Amina Hassan</p><p className="text-xs text-white/50">Form 4 · Dar es Salaam</p></div>
           </div>
         </div>
@@ -190,18 +190,18 @@ export function AuthPage() {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-6 text-white">
             <img src="/tz-coat-of-arms.png" alt="" className="h-8 w-8 object-contain"/>
-            <span className="font-bold">ExamHub <span style={{ color: 'var(--gold)' }}>Tanzania</span></span>
+            <span className="font-bold">ExamHub <span className="text-gold">Tanzania</span></span>
           </div>
 
-          <div className="rounded-2xl border border-white/10 p-6 sm:p-8 backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.07)' }}>
+          <div className="rounded-2xl border border-white/10 p-6 sm:p-8 backdrop-blur-sm bg-[rgba(255,255,255,0.07)]">
 
             {/* ──────────── LOGIN ──────────── */}
             {mode === 'login' && (
               <>
                 <Tabs active="login" onSwitch={t => t === 'login' ? switchToLogin() : switchToRegister()}/>
                 <div className="space-y-4 mt-6">
-                  <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="you@example.com"/>
-                  <PasswordField value={password} onChange={setPassword} show={showPass} onToggle={() => setShowPass(v=>!v)}/>
+                  <Field id="login-email" label="Email" value={email} onChange={setEmail} type="email" placeholder="you@example.com"/>
+                  <PasswordField id="login-password" value={password} onChange={setPassword} show={showPass} onToggle={() => setShowPass(v=>!v)}/>
                   <button onClick={() => setMode('forgot')} className="text-xs text-white/50 hover:text-white float-right">Forgot password?</button>
                   <div className="clear-both"/>
                   <SubmitBtn loading={loading} onClick={handleLogin} label="Sign In"/>
@@ -218,7 +218,7 @@ export function AuthPage() {
                 <h2 className="text-xl font-bold text-white mb-1">Reset password</h2>
                 <p className="text-white/60 text-sm mb-5">We'll send a reset link to your email.</p>
                 <div className="space-y-4">
-                  <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="you@example.com"/>
+                  <Field id="forgot-email" label="Email" value={email} onChange={setEmail} type="email" placeholder="you@example.com"/>
                   <SubmitBtn loading={loading} onClick={handleForgot} label="Send Reset Link"/>
                 </div>
               </>
@@ -236,8 +236,8 @@ export function AuthPage() {
                       <div key={s} className="flex items-center gap-2">
                         <div className={cn(
                           'flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold',
-                          regStep === s ? 'text-white' : 'bg-white/10 text-white/40'
-                        )} style={regStep === s ? { background: 'var(--green)' } : {}}>
+                          regStep === s ? 'bg-green text-white' : 'bg-white/10 text-white/40'
+                        )}>
                           {i + 1}
                         </div>
                         <span className={cn('text-xs', regStep === s ? 'text-white font-medium' : 'text-white/40')}>
@@ -261,9 +261,8 @@ export function AuthPage() {
                         <button key={r.value} type="button" onClick={() => setRole(r.value)}
                           className={cn(
                             'flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all',
-                            role === r.value ? 'border-transparent text-white' : 'border-white/20 text-white/70 hover:border-white/40'
-                          )}
-                          style={role === r.value ? { background: 'var(--green)' } : {}}>
+                            role === r.value ? 'border-transparent bg-green text-white' : 'border-white/20 text-white/70 hover:border-white/40'
+                          )}>
                           <span className="font-semibold text-sm">{r.label}</span>
                           <span className="text-xs opacity-80">{r.desc}</span>
                         </button>
@@ -276,8 +275,7 @@ export function AuthPage() {
                       </div>
                     )}
                     <button type="button" onClick={() => setRegStep('details')}
-                      className="w-full rounded-xl py-3 font-bold text-white transition-opacity hover:opacity-90"
-                      style={{ background: 'var(--navy)' }}>
+                      className="w-full rounded-xl py-3 font-bold text-white transition-opacity hover:opacity-90 bg-navy">
                       Continue as {ROLE_LABEL[role] ?? role} →
                     </button>
                   </div>
@@ -293,7 +291,11 @@ export function AuthPage() {
                     <SubmitBtn loading={false} onClick={() => {
                       if (!name || !email || !password) { toast.error('Fill in all fields'); return }
                       if (password.length < 6) { toast.error('Password must be at least 6 characters'); return }
-                      role === 'teacher' ? setRegStep('teacher-info') : handleRegister()
+                      if (role === 'teacher') {
+                        setRegStep('teacher-info')
+                      } else {
+                        handleRegister()
+                      }
                     }} label={role === 'teacher' ? 'Next: Teaching Details →' : 'Create Account'}/>
                   </div>
                 )}
@@ -304,18 +306,18 @@ export function AuthPage() {
                     <BackBtn onClick={() => setRegStep('details')}/>
 
                     {/* Phone */}
-                    <Field label="Mobile Number *" value={phone} onChange={setPhone} type="tel" placeholder="+255 7XX XXX XXX"/>
+                    <Field id="teacher-phone" label="Mobile Number *" value={phone} onChange={setPhone} type="tel" placeholder="+255 7XX XXX XXX"/>
 
                     {/* School name */}
-                    <Field label="School Name" value={schoolName} onChange={setSchoolName} type="text" placeholder="e.g. Nyerere Secondary School"/>
+                    <Field id="teacher-school" label="School Name" value={schoolName} onChange={setSchoolName} type="text" placeholder="e.g. Nyerere Secondary School"/>
 
                     {/* Region */}
-                    <DarkSelect label="Region *" value={region} onChange={v => { setRegion(v); setDistrict('') }}
+                    <DarkSelect id="teacher-region" label="Region *" value={region} onChange={v => { setRegion(v); setDistrict('') }}
                       options={TZ_REGIONS} placeholder="— Select region —"/>
 
                     {/* District — only shown after region selected */}
                     {region && districts.length > 0 && (
-                      <DarkSelect label="District" value={district} onChange={setDistrict}
+                      <DarkSelect id="teacher-district" label="District" value={district} onChange={setDistrict}
                         options={districts} placeholder="— Select district —"/>
                     )}
 
@@ -370,8 +372,7 @@ export function AuthPage() {
                       <p className="text-white/70 text-sm mt-1">Your account is ready. Start exploring.</p>
                     </div>
                     <button onClick={() => navigate('/dashboard')}
-                      className="w-full rounded-xl py-3.5 font-bold text-white"
-                      style={{ background: 'var(--green)' }}>
+                      className="w-full rounded-xl py-3.5 font-bold text-white bg-green">
                       Go to Dashboard
                     </button>
                   </>
@@ -418,13 +419,12 @@ export function AuthPage() {
 // ── Shared UI helpers ────────────────────────────────────────
 function Tabs({ active, onSwitch }: { active: 'login' | 'register'; onSwitch: (t: 'login' | 'register') => void }) {
   return (
-    <div className="flex rounded-xl p-1" style={{ background: 'rgba(255,255,255,0.06)' }}>
+    <div className="flex rounded-xl p-1 bg-[rgba(255,255,255,0.06)]">
       {(['login','register'] as const).map(t => (
         <button key={t} type="button" onClick={() => onSwitch(t)}
           className={cn('flex-1 py-2 text-sm font-semibold rounded-lg transition-all',
-            active === t ? 'bg-white shadow-sm' : 'text-white/60 hover:text-white'
-          )}
-          style={active === t ? { color: 'var(--navy)' } : {}}>
+            active === t ? 'bg-white text-navy shadow-sm' : 'text-white/60 hover:text-white'
+          )}>
           {t === 'login' ? 'Sign In' : 'Create Account'}
         </button>
       ))}
@@ -440,26 +440,26 @@ function BackBtn({ onClick }: { onClick: () => void }) {
   )
 }
 
-function Field({ label, value, onChange, placeholder, type }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder: string; type: string
+function Field({ label, value, onChange, placeholder, type, id }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder: string; type: string; id?: string
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-white/80 mb-1.5">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      <label htmlFor={id} className="block text-sm font-medium text-white/80 mb-1.5">{label}</label>
+      <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30"/>
     </div>
   )
 }
 
-function PasswordField({ value, onChange, show, onToggle }: {
-  value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void
+function PasswordField({ value, onChange, show, onToggle, id }: {
+  value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; id?: string
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-white/80 mb-1.5">Password</label>
+      <label htmlFor={id} className="block text-sm font-medium text-white/80 mb-1.5">Password</label>
       <div className="relative">
-        <input type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)}
+        <input id={id} type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)}
           placeholder="Min. 6 characters"
           className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 pr-11"/>
         <button type="button" onClick={onToggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
@@ -473,8 +473,7 @@ function PasswordField({ value, onChange, show, onToggle }: {
 function SubmitBtn({ loading, onClick, label }: { loading: boolean; onClick: () => void; label: string }) {
   return (
     <button type="button" onClick={onClick} disabled={loading}
-      className="w-full rounded-xl py-3.5 font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity hover:opacity-90"
-      style={{ background: 'var(--green)' }}>
+      className="w-full rounded-xl py-3.5 font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity hover:opacity-90 bg-green">
       {loading && <Loader2 className="h-4 w-4 animate-spin"/>}{label}
     </button>
   )

@@ -238,9 +238,8 @@ export function UploadPaper({ user }: { user: User }) {
           <CardContent className="space-y-4">
             {/* Dropzone */}
             <div>
-              <Label>File (PDF / Image / DOCX)</Label>
-              <div
-                onClick={() => fileInput.current?.click()}
+              <Label htmlFor="paper-file">File (PDF / Image / DOCX)</Label>
+              <label htmlFor="paper-file"
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => { e.preventDefault(); onPick(e.dataTransfer.files?.[0] ?? null) }}
                 className="mt-1.5 cursor-pointer flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 px-4 py-6 text-center hover:border-primary/50 hover:bg-muted/50 transition-colors">
@@ -268,9 +267,10 @@ export function UploadPaper({ user }: { user: User }) {
                     <p className="text-xs text-muted-foreground">PDF, PNG, JPG, DOCX — up to 25MB</p>
                   </>
                 )}
-                <input ref={fileInput} type="file" accept=".pdf,.doc,.docx,image/*" className="hidden"
+                <input id="paper-file" ref={fileInput} type="file" accept=".pdf,.doc,.docx,image/*" className="hidden"
+                  aria-label="Choose paper file to upload"
                   onChange={e => onPick(e.target.files?.[0] ?? null)}/>
-              </div>
+              </label>
             </div>
 
             {/* Progress */}
@@ -281,8 +281,7 @@ export function UploadPaper({ user }: { user: User }) {
                   <span>{ocrRunning ? `${ocrProgress?.progress ?? 0}%` : `${uploadProgress}%`}</span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-300"
-                    style={{ width: `${ocrRunning ? (ocrProgress?.progress ?? 0) : uploadProgress}%`, background: 'var(--green)' }}/>
+                  <progress className="h-full w-full rounded-full bg-muted accent-green" value={ocrRunning ? (ocrProgress?.progress ?? 0) : uploadProgress} max={100} />
                 </div>
               </div>
             )}
@@ -293,35 +292,35 @@ export function UploadPaper({ user }: { user: User }) {
                 <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Biology CSEE 2023 Paper 1"/>
               </div>
               <div>
-                <Label>Subject *</Label>
+                <Label htmlFor="subject">Subject *</Label>
                 <Select value={subject} onValueChange={setSubject}>
-                  <SelectTrigger><SelectValue placeholder="Choose subject"/></SelectTrigger>
+                  <SelectTrigger id="subject"><SelectValue placeholder="Choose subject"/></SelectTrigger>
                   <SelectContent>{SUBJECTS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Level *</Label>
+                <Label htmlFor="level">Level *</Label>
                 <Select value={level} onValueChange={setLevel}>
-                  <SelectTrigger><SelectValue placeholder="Choose level"/></SelectTrigger>
+                  <SelectTrigger id="level"><SelectValue placeholder="Choose level"/></SelectTrigger>
                   <SelectContent>{LEVELS.map(l => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Year *</Label>
-                <Input type="number" min="1990" max="2030" value={year} onChange={e => setYear(e.target.value)}/>
+                <Label htmlFor="year">Year *</Label>
+                <Input id="year" type="number" min="1990" max="2030" value={year} onChange={e => setYear(e.target.value)}/>
               </div>
               <div>
-                <Label>Paper Type</Label>
+                <Label htmlFor="paper-type">Paper Type</Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger><SelectValue/></SelectTrigger>
+                  <SelectTrigger id="paper-type"><SelectValue/></SelectTrigger>
                   <SelectContent>{PAPER_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               {user.role === 'super_admin' && (
                 <div className="sm:col-span-2">
-                  <Label>School</Label>
+                  <Label htmlFor="school">School</Label>
                   <Select value={schoolId||'none'} onValueChange={v => setSchoolId(v==='none'?'':v)}>
-                    <SelectTrigger><SelectValue placeholder="No school — public"/></SelectTrigger>
+                    <SelectTrigger id="school"><SelectValue placeholder="No school — public"/></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">— No school (public) —</SelectItem>
                       {schools.map(s => <SelectItem key={s.id} value={s.id}>{s.name} — {s.region}</SelectItem>)}
@@ -370,9 +369,8 @@ export function UploadPaper({ user }: { user: User }) {
                 <p>🖼️ Scanned PDFs / Images — Tesseract OCR (runs in browser)</p>
                 <p>📋 NECTA, mock, school exam layouts</p>
               </div>
-              <Button className="w-full" onClick={runOcr}
-                disabled={!file || (!isPdf && !isImage) || ocrRunning || saving}
-                style={{ background: 'var(--navy)' }}>
+              <Button className="w-full bg-navy" onClick={runOcr}
+                disabled={!file || (!isPdf && !isImage) || ocrRunning || saving}>
                 {ocrRunning
                   ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/>{ocrProgress?.message ?? 'Processing…'}</>
                   : <><Scan className="mr-2 h-4 w-4"/>Extract & Parse Questions</>}
@@ -429,14 +427,14 @@ export function UploadPaper({ user }: { user: User }) {
 
           {showQs && (
             <CardContent className="space-y-3 pt-0">
-              {parsedQs.map((q, i) => (
+              {parsedQs.map(q => (
                 <div key={q.id} className={cn(
                   'rounded-xl border p-3 space-y-3 transition-opacity',
                   !q.enabled && 'opacity-40'
                 )}>
                   {/* Q header */}
                   <div className="flex items-start gap-2">
-                    <input type="checkbox" checked={q.enabled} onChange={e => updQ(q.id, { enabled: e.target.checked })}
+                    <input type="checkbox" aria-label={`Include question ${q.number}`} checked={q.enabled} onChange={e => updQ(q.id, { enabled: e.target.checked })}
                       className="h-4 w-4 mt-0.5 accent-green-600 shrink-0"/>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5 mb-1">
@@ -468,7 +466,7 @@ export function UploadPaper({ user }: { user: User }) {
                           'flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs transition-colors',
                           q.correct_answer === String(oi) ? 'border-green-400 bg-green-50 text-green-800' : 'border-border'
                         )}>
-                          <input type="radio" name={`cr-${q.id}`} checked={q.correct_answer===String(oi)}
+                          <input type="radio" aria-label={`Correct answer ${String.fromCharCode(65+oi)} for question ${q.number}`} name={`cr-${q.id}`} checked={q.correct_answer===String(oi)}
                             onChange={() => updQ(q.id, { correct_answer: String(oi) })} className="h-3 w-3 accent-green-600"/>
                           <span>{String.fromCharCode(65+oi)}. {opt}</span>
                         </div>
@@ -496,8 +494,7 @@ export function UploadPaper({ user }: { user: User }) {
 
               {enabledCount > 0 && (
                 <div className="flex gap-2 pt-2 border-t border-border">
-                  <Button className="flex-1" onClick={() => submit(true)} disabled={saving}
-                    style={{ background: 'var(--green)' }}>
+                  <Button className="flex-1 bg-green" onClick={() => submit(true)} disabled={saving}>
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
                     Upload Paper + Create Exam Draft ({enabledCount} questions)
                   </Button>
