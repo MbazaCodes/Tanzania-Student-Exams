@@ -54,22 +54,27 @@ export function setSessionUid(id: string) { localStorage.setItem(SESSION_KEY, id
 export function clearSessionUid() { localStorage.removeItem(SESSION_KEY) }
 
 export async function getCurrentUser(): Promise<User | null> {
-  // Prefer Supabase Auth session
-  const authUser = await getAuthUser()
-  if (authUser) {
-    const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('id', authUser.id).single()
+  try {
+    // Prefer Supabase Auth session
+    const authUser = await getAuthUser()
+    if (authUser) {
+      const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('id', authUser.id).maybeSingle()
+      if (data) { setSessionUid(data.id); return data as User }
+    }
+    // Fallback: demo switcher (localStorage uid)
+    const uid = getSessionUid()
+    if (uid) {
+      const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('id', uid).maybeSingle()
+      if (data) return data as User
+    }
+    // Last resort: first super_admin row
+    const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('role', 'super_admin').limit(1).maybeSingle()
     if (data) { setSessionUid(data.id); return data as User }
+    return null
+  } catch {
+    // Table doesn't exist yet — SQL migrations not run
+    return null
   }
-  // Fallback: demo switcher
-  const uid = getSessionUid()
-  if (uid) {
-    const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('id', uid).single()
-    if (data) return data as User
-  }
-  // Last resort: first super_admin
-  const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('role', 'super_admin').limit(1).single()
-  if (data) { setSessionUid(data.id); return data as User }
-  return null
 }
 
 export async function getAllUsers(): Promise<User[]> {
@@ -78,7 +83,7 @@ export async function getAllUsers(): Promise<User[]> {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
-  const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('id', id).single()
+  const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('id', id).maybeSingle()
   return data as User | null
 }
 

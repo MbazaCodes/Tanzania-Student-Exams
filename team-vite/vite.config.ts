@@ -8,4 +8,8 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
+  server: {
+    // Return index.html for all routes so React Router handles them
+    historyApiFallback: true,
+  },
 })
