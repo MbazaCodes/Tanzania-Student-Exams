@@ -27,23 +27,22 @@ import { cn } from '@/lib/utils'
 interface NavItem { id: TabId; label: string; icon: React.ComponentType<{ className?: string }>; roles: string[] }
 
 const NAV: NavItem[] = [
-  { id: 'library',     label: 'Papers Library',     icon: Library,       roles: ['student','teacher','school_admin','super_admin'] },
-  { id: 'schedule',    label: 'Schedule & Alerts',  icon: CalendarClock, roles: ['student','teacher','school_admin','super_admin'] },
+  { id: 'library',     label: 'Papers Library',     icon: Library,       roles: ['student','teacher','super_admin'] },
+  { id: 'schedule',    label: 'Schedule & Alerts',  icon: CalendarClock, roles: ['student','teacher','super_admin'] },
   { id: 'take-exam',   label: 'Take Exam / Quiz',   icon: PenSquare,     roles: ['student'] },
   { id: 'results',     label: 'My Results',         icon: BarChart3,     roles: ['student'] },
-  { id: 'upload',      label: 'Upload Paper',       icon: Upload,        roles: ['teacher','school_admin','super_admin'] },
-  { id: 'create-exam', label: 'Create Exam / Quiz', icon: FilePlus2,     roles: ['teacher','school_admin','super_admin'] },
-  { id: 'my-exams',    label: 'My Exams',           icon: ClipboardList, roles: ['teacher','school_admin','super_admin'] },
-  { id: 'review',      label: 'Review Submissions', icon: CheckCircle2,  roles: ['teacher','school_admin','super_admin'] },
+  { id: 'upload',      label: 'Upload Paper',       icon: Upload,        roles: ['teacher','super_admin'] },
+  { id: 'create-exam', label: 'Create Exam / Quiz', icon: FilePlus2,     roles: ['teacher','super_admin'] },
+  { id: 'my-exams',    label: 'My Exams',           icon: ClipboardList, roles: ['teacher','super_admin'] },
+  { id: 'review',      label: 'Review Submissions', icon: CheckCircle2,  roles: ['teacher','super_admin'] },
   { id: 'admin',       label: 'Admin Overview',     icon: ShieldCheck,   roles: ['super_admin'] },
   { id: 'verifications',label: 'Verifications',       icon: ShieldCheck,   roles: ['super_admin'] },
-  { id: 'book-library', label: 'Book Library',        icon: Library,       roles: ['student','teacher','school_admin','super_admin'] },
+  { id: 'book-library', label: 'Book Library',        icon: Library,       roles: ['student','teacher','super_admin'] },
 ]
 
 const ROLE_COLOR: Record<string, string> = {
   student:      'bg-emerald-50 text-emerald-700 border-emerald-200',
   teacher:      'bg-amber-50 text-amber-700 border-amber-200',
-  school_admin: 'bg-sky-50 text-sky-700 border-sky-200',
   super_admin:  'bg-purple-50 text-purple-700 border-purple-200',
 }
 
@@ -132,8 +131,6 @@ export default function App() {
   const role = user?.role ?? 'student'
   const visibleNav = NAV.filter(n => n.roles.includes(role))
   const activeTab = visibleNav.some(n => n.id === tab) ? tab : 'library'
-  const isIndependent = role === 'teacher' && user?.teacher_type === 'independent'
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Toaster richColors position="top-right"/>
@@ -155,11 +152,7 @@ export default function App() {
           </button>
 
           <div className="ml-auto flex items-center gap-2">
-            {isIndependent && (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border border-amber-400/40 bg-amber-500/20 text-amber-200">
-                <Wifi className="h-3 w-3"/> Independent
-              </span>
-            )}
+
             <button onClick={() => { setScheduleAlert(false); setTab('schedule') }}
               className="hidden sm:inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm hover:bg-white/10 text-white relative">
               <Bell className="h-4 w-4"/>
@@ -180,7 +173,7 @@ export default function App() {
                 {switchers.map(s => (
                   <SelectItem key={s.id} value={s.id}>
                     <span className="font-medium">{s.name}</span>
-                    <span className="ml-1 text-xs text-muted-foreground">· {ROLE_LABEL[s.role]}{s.teacher_type === 'independent' ? ' (free)' : ''}</span>
+                    <span className="ml-1 text-xs text-muted-foreground">· {ROLE_LABEL[s.role]}{''}</span>
                   </SelectItem>
                 ))}
               </SelectContent>

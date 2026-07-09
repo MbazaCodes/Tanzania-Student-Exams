@@ -89,7 +89,7 @@ export function ProfilePage() {
             <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
           </div>
-          {user.role !== 'super_admin' && (
+          {user.role !== 'super_admin' && (  // students and teachers can set their school
             <div>
               <label className="block text-sm font-medium mb-1.5">School</label>
               <select value={schoolId} onChange={e => setSchoolId(e.target.value)}

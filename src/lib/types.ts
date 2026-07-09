@@ -1,5 +1,4 @@
-export type Role = 'student' | 'teacher' | 'school_admin' | 'super_admin'
-export type TeacherType = 'school' | 'independent'
+export type Role = 'student' | 'teacher' | 'super_admin'
 export type VerificationStatus = 'pending' | 'approved' | 'rejected'
 export type Level = 'standard_4' | 'standard_7' | 'form_2' | 'form_4' | 'form_6'
 export type PaperType = 'necta' | 'mock' | 'school' | 'regional' | 'pre_national'
@@ -19,7 +18,6 @@ export interface School {
 }
 export interface User {
   id: string; name: string; email: string; role: Role
-  teacher_type?: TeacherType | null
   verification_status?: VerificationStatus | null
   verified_at?: string | null
   school_id: string | null; school?: School | null
@@ -182,7 +180,7 @@ export function gradeFor(p: number) {
 export function levelLabel(v: string) { return LEVELS.find(l => l.value === v)?.label ?? v }
 export function examTypeLabel(v: string) { return EXAM_TYPES.find(t => t.value === v)?.label ?? v }
 export const ROLE_LABEL: Record<string, string> = {
-  student: 'Student', teacher: 'Teacher', school_admin: 'School Admin', super_admin: 'Super Admin',
+  student: 'Student', teacher: 'Teacher', super_admin: 'Super Admin',
 }
 export const ADMIN_EMAIL = 'admin@tems.go.tz'
 export const ADMIN_UID   = 'cdfc8267-1da3-4788-b526-40b593cb5ca8'

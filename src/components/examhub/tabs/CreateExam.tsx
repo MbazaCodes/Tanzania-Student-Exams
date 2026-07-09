@@ -54,7 +54,7 @@ export function CreateExam({ user }: { user: User }) {
   const [papers, setPapers] = useState<Paper[]>([])
   const [questions, setQuestions] = useState<QDraft[]>([newQ()])
   const [saving, setSaving] = useState(false)
-  const isIndependent = user.role === 'teacher' && user.teacher_type === 'independent'
+  const isIndependent = user.role === 'teacher'
 
   useEffect(() => {
     const pid = sessionStorage.getItem('examhub:prefillPaperId')

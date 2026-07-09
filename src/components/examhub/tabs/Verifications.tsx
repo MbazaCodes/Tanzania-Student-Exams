@@ -34,7 +34,7 @@ export function Verifications({ user: _user }: { user: UserType }) {
       // Also show users with pending verification not in requests yet
       const pending = (users as UserType[]).filter(u =>
         u.verification_status === 'pending' &&
-        ['teacher','school_admin'].includes(u.role)
+        u.role === 'teacher'
       )
       setPendingUsers(pending)
     } catch(e) { toast.error(e instanceof Error ? e.message : 'Failed') }
@@ -129,8 +129,8 @@ export function Verifications({ user: _user }: { user: UserType }) {
               <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
                   <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white font-bold',
-                    req.role === 'school_admin' ? 'bg-sky-600' : 'bg-amber-600')}>
-                    {req.role === 'school_admin' ? <School className="h-5 w-5"/> : <User className="h-5 w-5"/>}
+                    'bg-amber-600')}>
+                    {<User className="h-5 w-5"/>}
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold">{req.user?.name ?? '—'}</p>
@@ -202,7 +202,6 @@ function UserVerifCard({ user, onApprove, onReject }: { user: UserType; onApprov
             <p className="text-sm text-muted-foreground">{user.email}</p>
             <div className="flex gap-1 mt-1">
               <Badge variant="outline" className="text-xs">{ROLE_LABEL[user.role]}</Badge>
-              {user.teacher_type && <Badge variant="outline" className="text-xs capitalize">{user.teacher_type}</Badge>}
               <Badge className="text-xs bg-amber-100 text-amber-700"><Clock className="h-2.5 w-2.5 mr-0.5"/>Pending</Badge>
             </div>
           </div>

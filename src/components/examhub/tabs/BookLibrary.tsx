@@ -24,7 +24,7 @@ import { useStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
-const canContribute = (r: string) => ['teacher','school_admin','super_admin'].includes(r)
+const canContribute = (r: string) => ['teacher','super_admin'].includes(r)
 
 const TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
   book: BookOpen, notes: FileText, video: Video,

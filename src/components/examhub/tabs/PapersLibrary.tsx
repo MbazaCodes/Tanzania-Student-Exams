@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 const STATUS_STYLE: Record<string,string> = { draft:'bg-amber-100 text-amber-700 border-amber-200', published:'bg-emerald-100 text-emerald-700 border-emerald-200', archived:'bg-zinc-200 text-zinc-600 border-zinc-300' }
-const canManage = (r: string) => ['teacher','school_admin','super_admin'].includes(r)
+const canManage = (r: string) => ['teacher','super_admin'].includes(r)
 function fmtSize(b: number|null) { if(!b) return '—'; if(b<1024) return `${b}B`; if(b<1048576) return `${(b/1024).toFixed(0)}KB`; return `${(b/1048576).toFixed(1)}MB` }
 
 export function PapersLibrary({ user }: { user: User }) {
