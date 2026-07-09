@@ -14,7 +14,8 @@ export type ScheduleStatus = 'scheduled' | 'live' | 'completed' | 'cancelled'
 export interface School { id: string; name: string; region: string; plan: string }
 export interface User {
   id: string; name: string; email: string; role: Role
-  teacher_type?: TeacherType | null; school_id: string | null; school?: School | null; created_at: string
+  teacher_type?: TeacherType | null; school_id: string | null; school?: School | null
+  avatar_url?: string | null; bio?: string | null; phone?: string | null; created_at: string
 }
 export interface Paper {
   id: string; title: string; subject: string; level: Level; year: number

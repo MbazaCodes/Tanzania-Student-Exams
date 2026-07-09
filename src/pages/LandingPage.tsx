@@ -29,10 +29,10 @@ export function LandingPage() {
                 <a key={l} href="#" className="hover:text-white transition-colors">{l}</a>
               ))}
             </div>
-            <button onClick={() => navigate('/dashboard')} className="rounded-lg px-4 py-2 text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors hidden sm:inline-flex">
+            <button onClick={() => navigate('/auth')} className="rounded-lg px-4 py-2 text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors hidden sm:inline-flex">
               Sign In
             </button>
-            <button onClick={() => navigate('/dashboard')} className="rounded-lg px-4 py-2 text-sm font-bold text-white transition-all hover:opacity-90 shadow-lg" style={{ background: 'var(--green)' }}>
+            <button onClick={() => navigate('/auth')} className="rounded-lg px-4 py-2 text-sm font-bold text-white transition-all hover:opacity-90 shadow-lg" style={{ background: 'var(--green)' }}>
               Get Started
             </button>
           </div>
@@ -71,10 +71,10 @@ export function LandingPage() {
 
               {/* CTA row */}
               <div className="flex flex-wrap gap-3 mb-10">
-                <button onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-base font-bold text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl" style={{ background: 'var(--green)' }}>
+                <button onClick={() => navigate('/auth')} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-base font-bold text-white shadow-xl transition-all hover:scale-105 hover:shadow-2xl" style={{ background: 'var(--green)' }}>
                   Start Learning Free <ArrowRight className="h-5 w-5" />
                 </button>
-                <button onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-base font-semibold text-white border border-white/25 hover:bg-white/10 transition-colors">
+                <button onClick={() => navigate('/auth')} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-base font-semibold text-white border border-white/25 hover:bg-white/10 transition-colors">
                   <Play className="h-4 w-4" style={{ color: 'var(--gold)' }} /> Watch Demo
                 </button>
               </div>
@@ -179,7 +179,7 @@ export function LandingPage() {
               { level: 'Form 4', exam: 'CSEE', color: '#003366', bg: 'rgba(0,51,102,0.08)', icon: '🏆' },
               { level: 'Form 6', exam: 'ACSEE', color: '#8b1a1a', bg: 'rgba(139,26,26,0.08)', icon: '🌟' },
             ].map(l => (
-              <div key={l.level} onClick={() => navigate('/dashboard')} className="cursor-pointer group rounded-2xl border-2 p-5 text-center transition-all hover:scale-105 hover:shadow-xl" style={{ borderColor: 'transparent', background: l.bg }}>
+              <div key={l.level} onClick={() => navigate('/auth')} className="cursor-pointer group rounded-2xl border-2 p-5 text-center transition-all hover:scale-105 hover:shadow-xl" style={{ borderColor: 'transparent', background: l.bg }}>
                 <div className="text-3xl mb-2">{l.icon}</div>
                 <div className="font-bold text-gray-900 text-sm">{l.level}</div>
                 <div className="text-xs font-semibold mt-1 rounded-full px-2 py-0.5 inline-block" style={{ color: l.color, background: `${l.color}15` }}>{l.exam}</div>
@@ -251,7 +251,7 @@ export function LandingPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 font-bold text-white transition-all hover:opacity-90" style={{ background: 'var(--green)' }}>
+              <button onClick={() => navigate('/auth')} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 font-bold text-white transition-all hover:opacity-90" style={{ background: 'var(--green)' }}>
                 Create Your First Exam <ChevronRight className="h-5 w-5" />
               </button>
             </div>
@@ -340,10 +340,10 @@ export function LandingPage() {
             Join thousands of Tanzanian students who use ExamHub to prepare for NECTA, PSLE, CSEE and ACSEE.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <button onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-bold text-white shadow-2xl transition-all hover:scale-105" style={{ background: 'var(--green)' }}>
+            <button onClick={() => navigate('/auth')} className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-bold text-white shadow-2xl transition-all hover:scale-105" style={{ background: 'var(--green)' }}>
               Start for Free <ArrowRight className="h-5 w-5" />
             </button>
-            <button onClick={() => navigate('/dashboard')} className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-semibold text-white border border-white/25 hover:bg-white/10 transition-colors">
+            <button onClick={() => navigate('/auth')} className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-semibold text-white border border-white/25 hover:bg-white/10 transition-colors">
               Explore Papers <ChevronRight className="h-5 w-5" />
             </button>
           </div>
