@@ -94,8 +94,14 @@ export async function updateUserProfile(id: string, updates: Partial<User>) {
 }
 
 export async function createUserProfile(profile: {
-  id: string; name: string; email: string; role: string;
+  id: string; name: string; email: string; role: string
+  phone?: string | null
   school_id?: string | null
+  school_name?: string | null
+  region?: string | null
+  district?: string | null
+  teaching_levels?: string | null
+  subjects_taught?: string | null
 }) {
   const { data, error } = await supabaseAdmin.from('users').upsert(profile, { onConflict: 'id' }).select().single()
   if (error) throw new Error(error.message)

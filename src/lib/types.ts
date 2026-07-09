@@ -22,6 +22,11 @@ export interface User {
   verified_at?: string | null
   school_id: string | null; school?: School | null
   avatar_url?: string | null; bio?: string | null; phone?: string | null
+  school_name?: string | null
+  region?: string | null
+  district?: string | null
+  teaching_levels?: string | null   // JSON array
+  subjects_taught?: string | null   // JSON array
   is_active?: boolean; created_at: string
 }
 export interface Paper {
@@ -172,6 +177,39 @@ export const FORMULA_TEMPLATES: Record<string, { label: string; latex: string }[
     { label: 'Molarity',       latex: 'M = \\frac{n}{V}' },
   ],
 }
+
+// ── Tanzania Regions & Districts ─────────────────────────────
+export const TZ_REGIONS_DISTRICTS: Record<string, string[]> = {
+  'Dar es Salaam': ['Ilala','Kinondoni','Temeke','Ubungo','Kigamboni'],
+  'Mwanza':        ['Ilemela','Nyamagana','Buchosa','Magu','Misungwi','Kwimba','Sengerema'],
+  'Arusha':        ['Arusha City','Meru','Arusha','Karatu','Longido','Monduli','Ngorongoro'],
+  'Dodoma':        ['Bahi','Chamwino','Chemba','Dodoma Urban','Kondoa','Kongwa','Mpwapwa'],
+  'Mbeya':         ['Busokelo','Chunya','Kyela','Mbarali','Mbeya City','Mbeya Rural','Momba','Rungwe'],
+  'Morogoro':      ['Gairo','Kilosa','Kilombero','Malinyi','Morogoro Urban','Morogoro Rural','Mvomero','Ulanga'],
+  'Tanga':         ['Handeni','Kilindi','Korogwe','Lushoto','Mkinga','Muheza','Pangani','Tanga City'],
+  'Zanzibar North':['Kaskazini A','Kaskazini B'],
+  'Zanzibar South':['Kusini','Magharibi'],
+  'Zanzibar West': ['Mjini','Magharibi'],
+  'Pwani':         ['Bagamoyo','Kibaha','Kibiti','Kisarawe','Mafia','Mkuranga','Rufiji'],
+  'Lindi':         ['Kilwa','Lindi Urban','Lindi Rural','Liwale','Nachingwea','Ruangwa'],
+  'Mara':          ['Bunda','Butiama','Musoma Urban','Musoma Rural','Rorya','Serengeti','Tarime'],
+  'Mtwara':        ['Masasi','Mtwara Urban','Mtwara Rural','Nanyumbu','Newala','Tandahimba'],
+  'Rukwa':         ['Kalambo','Nkasi','Sumbawanga Urban','Sumbawanga Rural'],
+  'Ruvuma':        ['Mbinga','Namtumbo','Nyasa','Songea Urban','Songea Rural','Tunduru'],
+  'Shinyanga':     ['Kahama','Kishapu','Shinyanga Urban','Shinyanga Rural'],
+  'Singida':       ['Ikungi','Iramba','Manyoni','Mkalama','Singida Urban','Singida Rural'],
+  'Tabora':        ['Igunga','Kaliua','Nzega','Sikonge','Tabora Urban','Urambo','Uyui'],
+  'Kagera':        ['Biharamulo','Bukoba Urban','Bukoba Rural','Karagwe','Kyerwa','Missenyi','Muleba','Ngara'],
+  'Kigoma':        ['Buhigwe','Kakonko','Kasulu','Kibondo','Kigoma Urban','Kigoma Rural','Uvinza'],
+  'Kilimanjaro':   ['Hai','Moshi Urban','Moshi Rural','Mwanga','Rombo','Same','Siha'],
+  'Iringa':        ['Iringa Urban','Iringa Rural','Kilolo','Mufindi'],
+  'Geita':         ['Bukombe','Chato','Geita','Mbogwe',"Nyang'hwale"],
+  'Katavi':        ['Mlele','Mpanda Urban','Mpanda Rural'],
+  'Njombe':        ['Ludewa','Makambako','Makete','Njombe Urban','Njombe Rural',"Wanging'ombe"],
+  'Simiyu':        ['Bariadi','Busega','Itilima','Maswa','Meatu'],
+  'Songwe':        ['Ileje','Mbozi','Momba','Songwe'],
+}
+export const TZ_REGIONS = Object.keys(TZ_REGIONS_DISTRICTS).sort()
 
 export function gradeFor(p: number) {
   if (p >= 80) return 'A'; if (p >= 65) return 'B'

@@ -1,13 +1,63 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { Eye, EyeOff, Loader2, ArrowLeft, CheckCircle2, Clock } from 'lucide-react'
+import { Eye, EyeOff, Loader2, ArrowLeft, CheckCircle2, Clock, ChevronDown } from 'lucide-react'
 import { signIn, signUp, resetPassword, createUserProfile, submitVerificationRequest } from '@/lib/api'
-import { ROLE_LABEL, ADMIN_EMAIL, ADMIN_UID } from '@/lib/types'
+import { ROLE_LABEL, ADMIN_EMAIL, ADMIN_UID, SUBJECTS, LEVELS, TZ_REGIONS, TZ_REGIONS_DISTRICTS } from '@/lib/types'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 type Mode = 'login' | 'register' | 'forgot'
-type RegStep = 'role' | 'details' | 'done'
+type RegStep = 'role' | 'details' | 'teacher-info' | 'done'
+
+// multi-select pill component
+function PillSelect({ options, selected, onChange, max }: {
+  options: string[]
+  selected: string[]
+  onChange: (v: string[]) => void
+  max?: number
+}) {
+  const toggle = (v: string) => {
+    if (selected.includes(v)) { onChange(selected.filter(x => x !== v)); return }
+    if (max && selected.length >= max) { toast.error(`Max ${max} selections`); return }
+    onChange([...selected, v])
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+      {options.map(o => (
+        <button key={o} type="button" onClick={() => toggle(o)}
+          className={cn(
+            'rounded-full px-2.5 py-1 text-xs font-medium border transition-colors',
+            selected.includes(o)
+              ? 'border-transparent text-white'
+              : 'border-white/20 text-white/60 hover:border-white/50 hover:text-white'
+          )}
+          style={selected.includes(o) ? { background: 'var(--green)' } : {}}>
+          {o}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// native dropdown styled for dark bg
+function DarkSelect({ label, value, onChange, options, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void
+  options: string[]; placeholder?: string
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-white/80 mb-1.5">{label}</label>
+      <div className="relative">
+        <select value={value} onChange={e => onChange(e.target.value)}
+          className="w-full appearance-none rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30 pr-10">
+          {placeholder && <option value="" style={{ color: '#333' }}>{placeholder}</option>}
+          {options.map(o => <option key={o} value={o} style={{ color: '#333' }}>{o}</option>)}
+        </select>
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 pointer-events-none"/>
+      </div>
+    </div>
+  )
+}
 
 export function AuthPage() {
   const navigate = useNavigate()
@@ -17,14 +67,25 @@ export function AuthPage() {
   const [showPass, setShowPass] = useState(false)
   const [regStep, setRegStep] = useState<RegStep>('role')
 
+  // common
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [name, setName]         = useState('')
   const [role, setRole]         = useState('student')
-  const [message, setMessage]   = useState('')
+
+  // teacher info
+  const [phone, setPhone]               = useState('')
+  const [schoolName, setSchoolName]     = useState('')
+  const [region, setRegion]             = useState('')
+  const [district, setDistrict]         = useState('')
+  const [teachingLevels, setTeachingLevels] = useState<string[]>([])
+  const [subjectsTaught, setSubjectsTaught] = useState<string[]>([])
+  const [message, setMessage]           = useState('')
+
   const [registeredName, setRegisteredName] = useState('')
 
-  const isTeacher = role === 'teacher'
+  const districts = region ? (TZ_REGIONS_DISTRICTS[region] ?? []) : []
+  const levelOptions = LEVELS.map(l => l.label)
 
   const handleLogin = async () => {
     if (!email || !password) { toast.error('Enter email and password'); return }
@@ -51,24 +112,41 @@ export function AuthPage() {
   const handleRegister = async () => {
     if (!name || !email || !password) { toast.error('Name, email and password are required'); return }
     if (password.length < 6) { toast.error('Password must be at least 6 characters'); return }
+    if (role === 'teacher') {
+      if (!phone) { toast.error('Mobile number is required'); return }
+      if (!region) { toast.error('Please select your region'); return }
+      if (teachingLevels.length === 0) { toast.error('Select at least one teaching level'); return }
+      if (subjectsTaught.length === 0) { toast.error('Select at least one subject'); return }
+    }
     setLoading(true)
     try {
       const authUser = await signUp(email, password, name, role)
       if (!authUser) throw new Error('Registration failed')
 
-      // admin@tems.go.tz always gets super_admin
-      const finalRole = (email === ADMIN_EMAIL || authUser.id === ADMIN_UID)
-        ? 'super_admin' : role
+      const finalRole = (email === ADMIN_EMAIL || authUser.id === ADMIN_UID) ? 'super_admin' : role
 
       await createUserProfile({
         id: authUser.id, name, email, role: finalRole,
-      })
+        phone: phone || null,
+        school_name: schoolName || null,
+        region: region || null,
+        district: district || null,
+        teaching_levels: teachingLevels.length ? JSON.stringify(teachingLevels) : null,
+        subjects_taught: subjectsTaught.length ? JSON.stringify(subjectsTaught) : null,
+      } as Parameters<typeof createUserProfile>[0])
 
-      // Teachers need admin approval
       if (finalRole === 'teacher') {
         await submitVerificationRequest({
-          user_id: authUser.id, role: finalRole,
-          message: message || undefined,
+          user_id: authUser.id,
+          role: finalRole,
+          school_name: schoolName || undefined,
+          message: [
+            region && `Region: ${region}${district ? `, ${district}` : ''}`,
+            phone && `Phone: ${phone}`,
+            teachingLevels.length && `Levels: ${teachingLevels.join(', ')}`,
+            subjectsTaught.length && `Subjects: ${subjectsTaught.join(', ')}`,
+            message,
+          ].filter(Boolean).join(' | ') || undefined,
         })
       }
 
@@ -78,9 +156,13 @@ export function AuthPage() {
     finally { setLoading(false) }
   }
 
+  const switchToLogin = () => { setMode('login'); setRegStep('role') }
+  const switchToRegister = () => { setMode('register'); setRegStep('role') }
+
   return (
     <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #001f3f 0%, #003366 100%)' }}>
-      {/* Left branding */}
+
+      {/* ── Left branding panel ── */}
       <div className="hidden lg:flex flex-col justify-between w-5/12 p-12 text-white">
         <Link to="/" className="flex items-center gap-3">
           <img src="/tz-coat-of-arms.png" alt="" className="h-10 w-10 object-contain"/>
@@ -89,7 +171,7 @@ export function AuthPage() {
             <div className="text-xs text-white/60">Mitihani · Maswali · Matokeo</div>
           </div>
         </Link>
-        <img src="/hero.png" alt="" className="w-full max-w-sm mx-auto object-contain" style={{ maxHeight: '380px' }}/>
+        <img src="/hero.png" alt="" className="w-full max-w-sm mx-auto object-contain" style={{ maxHeight: '360px' }}/>
         <div>
           <p className="text-white/70 italic leading-relaxed mb-3">
             "ExamHub helped me improve from D to B in Mathematics. The per-question timers really work!"
@@ -101,25 +183,23 @@ export function AuthPage() {
         </div>
       </div>
 
-      {/* Right form */}
-      <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
-        <div className="w-full max-w-md py-8">
+      {/* ── Right form panel ── */}
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div className="w-full max-w-lg py-6">
+
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-8 text-white">
+          <div className="lg:hidden flex items-center gap-3 mb-6 text-white">
             <img src="/tz-coat-of-arms.png" alt="" className="h-8 w-8 object-contain"/>
             <span className="font-bold">ExamHub <span style={{ color: 'var(--gold)' }}>Tanzania</span></span>
           </div>
 
-          <div className="rounded-2xl border border-white/10 p-8 backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.07)' }}>
+          <div className="rounded-2xl border border-white/10 p-6 sm:p-8 backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.07)' }}>
 
-            {/* ── LOGIN ── */}
+            {/* ──────────── LOGIN ──────────── */}
             {mode === 'login' && (
               <>
-                <div className="flex rounded-xl p-1 mb-8" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <button onClick={() => setMode('login')} className="flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-navy shadow-sm">Sign In</button>
-                  <button onClick={() => { setMode('register'); setRegStep('role') }} className="flex-1 py-2 text-sm font-semibold rounded-lg text-white/60 hover:text-white">Create Account</button>
-                </div>
-                <div className="space-y-4">
+                <Tabs active="login" onSwitch={t => t === 'login' ? switchToLogin() : switchToRegister()}/>
+                <div className="space-y-4 mt-6">
                   <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="you@example.com"/>
                   <PasswordField value={password} onChange={setPassword} show={showPass} onToggle={() => setShowPass(v=>!v)}/>
                   <button onClick={() => setMode('forgot')} className="text-xs text-white/50 hover:text-white float-right">Forgot password?</button>
@@ -129,14 +209,14 @@ export function AuthPage() {
               </>
             )}
 
-            {/* ── FORGOT ── */}
+            {/* ──────────── FORGOT ──────────── */}
             {mode === 'forgot' && (
               <>
-                <button onClick={() => setMode('login')} className="flex items-center gap-2 text-white/60 hover:text-white text-sm mb-6">
-                  <ArrowLeft className="h-4 w-4"/>Back
+                <button onClick={switchToLogin} className="flex items-center gap-2 text-white/60 hover:text-white text-sm mb-6">
+                  <ArrowLeft className="h-4 w-4"/>Back to sign in
                 </button>
-                <h2 className="text-xl font-bold text-white mb-2">Reset password</h2>
-                <p className="text-white/60 text-sm mb-6">We'll send a reset link to your email.</p>
+                <h2 className="text-xl font-bold text-white mb-1">Reset password</h2>
+                <p className="text-white/60 text-sm mb-5">We'll send a reset link to your email.</p>
                 <div className="space-y-4">
                   <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="you@example.com"/>
                   <SubmitBtn loading={loading} onClick={handleForgot} label="Send Reset Link"/>
@@ -144,24 +224,41 @@ export function AuthPage() {
               </>
             )}
 
-            {/* ── REGISTER ── */}
+            {/* ──────────── REGISTER ──────────── */}
             {mode === 'register' && regStep !== 'done' && (
               <>
-                <div className="flex rounded-xl p-1 mb-8" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                  <button onClick={() => setMode('login')} className="flex-1 py-2 text-sm font-semibold rounded-lg text-white/60 hover:text-white">Sign In</button>
-                  <button className="flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-navy shadow-sm">Create Account</button>
-                </div>
+                <Tabs active="register" onSwitch={t => t === 'login' ? switchToLogin() : switchToRegister()}/>
 
-                {/* Step 1 — Role */}
+                {/* Step indicator for teacher */}
+                {role === 'teacher' && regStep !== 'role' && (
+                  <div className="flex items-center gap-2 mt-5 mb-4">
+                    {(['details','teacher-info'] as RegStep[]).map((s, i) => (
+                      <div key={s} className="flex items-center gap-2">
+                        <div className={cn(
+                          'flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold',
+                          regStep === s ? 'text-white' : 'bg-white/10 text-white/40'
+                        )} style={regStep === s ? { background: 'var(--green)' } : {}}>
+                          {i + 1}
+                        </div>
+                        <span className={cn('text-xs', regStep === s ? 'text-white font-medium' : 'text-white/40')}>
+                          {s === 'details' ? 'Account' : 'Teacher Info'}
+                        </span>
+                        {i === 0 && <div className="h-px w-6 bg-white/20"/>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ── STEP 1: Role ── */}
                 {regStep === 'role' && (
-                  <div className="space-y-4">
+                  <div className="space-y-4 mt-6">
                     <p className="text-white/80 text-sm font-medium">I am a…</p>
                     <div className="grid grid-cols-2 gap-3">
                       {[
-                        { value: 'student', label: '🎓 Student', desc: 'Take exams, track my results' },
+                        { value: 'student', label: '🎓 Student',  desc: 'Take exams, track my results' },
                         { value: 'teacher', label: '👩‍🏫 Teacher', desc: 'Create exams, mark submissions' },
                       ].map(r => (
-                        <button key={r.value} onClick={() => setRole(r.value)}
+                        <button key={r.value} type="button" onClick={() => setRole(r.value)}
                           className={cn(
                             'flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all',
                             role === r.value ? 'border-transparent text-white' : 'border-white/20 text-white/70 hover:border-white/40'
@@ -172,18 +269,13 @@ export function AuthPage() {
                         </button>
                       ))}
                     </div>
-
-                    {isTeacher && (
+                    {role === 'teacher' && (
                       <div className="flex items-start gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-200">
                         <Clock className="h-4 w-4 shrink-0 mt-0.5"/>
-                        <span>
-                          <strong>Verification required:</strong> Teachers need admin approval before creating exams.
-                          You can browse content and update your profile while waiting.
-                        </span>
+                        <span><strong>Verification required:</strong> Admins will review your profile before you can create exams. You can browse content while waiting.</span>
                       </div>
                     )}
-
-                    <button onClick={() => setRegStep('details')}
+                    <button type="button" onClick={() => setRegStep('details')}
                       className="w-full rounded-xl py-3 font-bold text-white transition-opacity hover:opacity-90"
                       style={{ background: 'var(--navy)' }}>
                       Continue as {ROLE_LABEL[role] ?? role} →
@@ -191,46 +283,94 @@ export function AuthPage() {
                   </div>
                 )}
 
-                {/* Step 2 — Details */}
+                {/* ── STEP 2: Account details ── */}
                 {regStep === 'details' && (
-                  <div className="space-y-4">
-                    <button onClick={() => setRegStep('role')} className="flex items-center gap-2 text-white/60 hover:text-white text-sm">
-                      <ArrowLeft className="h-4 w-4"/>Back
-                    </button>
-                    <Field label="Full Name *" value={name} onChange={setName} type="text" placeholder="e.g. Amina Hassan"/>
+                  <div className="space-y-4 mt-4">
+                    <BackBtn onClick={() => setRegStep('role')}/>
+                    <Field label="Full Name *" value={name} onChange={setName} type="text" placeholder="e.g. Joseph Komba"/>
                     <Field label="Email *" value={email} onChange={setEmail} type="email" placeholder="you@example.com"/>
                     <PasswordField value={password} onChange={setPassword} show={showPass} onToggle={() => setShowPass(v=>!v)}/>
+                    <SubmitBtn loading={false} onClick={() => {
+                      if (!name || !email || !password) { toast.error('Fill in all fields'); return }
+                      if (password.length < 6) { toast.error('Password must be at least 6 characters'); return }
+                      role === 'teacher' ? setRegStep('teacher-info') : handleRegister()
+                    }} label={role === 'teacher' ? 'Next: Teaching Details →' : 'Create Account'}/>
+                  </div>
+                )}
 
-                    {isTeacher && (
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-1.5">
-                          Tell the admin about yourself <span className="text-white/40">(optional)</span>
-                        </label>
-                        <textarea value={message} onChange={e => setMessage(e.target.value)} rows={2}
-                          className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/30 text-sm focus:outline-none resize-none"
-                          placeholder="Your subjects, experience, school you teach at…"/>
-                      </div>
+                {/* ── STEP 3: Teacher info ── */}
+                {regStep === 'teacher-info' && (
+                  <div className="space-y-4 mt-4">
+                    <BackBtn onClick={() => setRegStep('details')}/>
+
+                    {/* Phone */}
+                    <Field label="Mobile Number *" value={phone} onChange={setPhone} type="tel" placeholder="+255 7XX XXX XXX"/>
+
+                    {/* School name */}
+                    <Field label="School Name" value={schoolName} onChange={setSchoolName} type="text" placeholder="e.g. Nyerere Secondary School"/>
+
+                    {/* Region */}
+                    <DarkSelect label="Region *" value={region} onChange={v => { setRegion(v); setDistrict('') }}
+                      options={TZ_REGIONS} placeholder="— Select region —"/>
+
+                    {/* District — only shown after region selected */}
+                    {region && districts.length > 0 && (
+                      <DarkSelect label="District" value={district} onChange={setDistrict}
+                        options={districts} placeholder="— Select district —"/>
                     )}
 
-                    <SubmitBtn loading={loading} onClick={handleRegister}
-                      label={isTeacher ? 'Submit for Verification' : 'Create Account'}/>
+                    {/* Teaching levels */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">
+                        Levels of Teaching * <span className="text-white/40 text-xs">(select all that apply)</span>
+                      </label>
+                      <PillSelect options={levelOptions} selected={teachingLevels} onChange={setTeachingLevels}/>
+                      {teachingLevels.length > 0 && (
+                        <p className="text-xs text-white/50 mt-1">{teachingLevels.length} selected</p>
+                      )}
+                    </div>
+
+                    {/* Subjects */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-2">
+                        Subjects You Teach * <span className="text-white/40 text-xs">(select all that apply)</span>
+                      </label>
+                      <PillSelect options={SUBJECTS} selected={subjectsTaught} onChange={setSubjectsTaught}/>
+                      {subjectsTaught.length > 0 && (
+                        <p className="text-xs text-white/50 mt-1">{subjectsTaught.length} selected: {subjectsTaught.join(', ')}</p>
+                      )}
+                    </div>
+
+                    {/* Additional message */}
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-1.5">
+                        Additional message <span className="text-white/40 text-xs">(optional)</span>
+                      </label>
+                      <textarea value={message} onChange={e => setMessage(e.target.value)} rows={2}
+                        className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/30 text-sm focus:outline-none resize-none"
+                        placeholder="Years of experience, qualifications, etc."/>
+                    </div>
+
+                    <SubmitBtn loading={loading} onClick={handleRegister} label="Submit for Verification"/>
                   </div>
                 )}
               </>
             )}
 
-            {/* ── DONE ── */}
+            {/* ──────────── DONE ──────────── */}
             {mode === 'register' && regStep === 'done' && (
-              <div className="text-center space-y-4">
+              <div className="text-center space-y-5 py-2">
                 {role === 'student' ? (
                   <>
                     <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-green-500/20">
                       <CheckCircle2 className="h-8 w-8 text-green-400"/>
                     </div>
-                    <h2 className="text-xl font-bold text-white">Welcome, {registeredName}!</h2>
-                    <p className="text-white/70 text-sm">Your account is ready. Start exploring past papers and exams.</p>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Welcome, {registeredName}!</h2>
+                      <p className="text-white/70 text-sm mt-1">Your account is ready. Start exploring.</p>
+                    </div>
                     <button onClick={() => navigate('/dashboard')}
-                      className="w-full rounded-xl py-3 font-bold text-white"
+                      className="w-full rounded-xl py-3.5 font-bold text-white"
                       style={{ background: 'var(--green)' }}>
                       Go to Dashboard
                     </button>
@@ -240,34 +380,66 @@ export function AuthPage() {
                     <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-amber-500/20">
                       <Clock className="h-8 w-8 text-amber-400"/>
                     </div>
-                    <h2 className="text-xl font-bold text-white">Verification Pending</h2>
-                    <p className="text-white/70 text-sm leading-relaxed">
-                      Thank you, <strong className="text-white">{registeredName}</strong>! Your teacher account has been submitted for review. An admin will approve it shortly.
-                    </p>
-                    <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-200 text-left">
-                      <p className="font-semibold mb-2">While you wait:</p>
-                      <ul className="space-y-1 text-xs">
-                        <li>✓ Browse published papers and exams</li>
-                        <li>✓ Update your profile and add your school</li>
-                        <li>⏳ Creating exams requires admin approval</li>
-                      </ul>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Application Submitted!</h2>
+                      <p className="text-white/70 text-sm mt-1 leading-relaxed">
+                        Thank you, <strong className="text-white">{registeredName}</strong>!
+                        Your teacher profile has been sent for review.
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-200 text-left space-y-1.5">
+                      <p className="font-semibold">While waiting for approval:</p>
+                      <p className="text-xs">✓ Browse published past papers and exams</p>
+                      <p className="text-xs">✓ Update your profile with more details</p>
+                      <p className="text-xs">⏳ Creating & publishing exams requires admin approval</p>
                     </div>
                     <button onClick={() => navigate('/dashboard')}
-                      className="w-full rounded-xl py-3 font-bold text-white/80 border border-white/20 hover:bg-white/10">
+                      className="w-full rounded-xl py-3 font-semibold text-white/80 border border-white/20 hover:bg-white/10 transition-colors">
                       Continue to Dashboard
                     </button>
                   </>
                 )}
               </div>
             )}
+
           </div>
+
+          {mode !== 'register' && (
+            <p className="text-center text-white/30 text-xs mt-4">
+              ExamHub Tanzania · Proudly serving Tanzanian students
+            </p>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-// ── Reusable field components ───────────────────────────────
+// ── Shared UI helpers ────────────────────────────────────────
+function Tabs({ active, onSwitch }: { active: 'login' | 'register'; onSwitch: (t: 'login' | 'register') => void }) {
+  return (
+    <div className="flex rounded-xl p-1" style={{ background: 'rgba(255,255,255,0.06)' }}>
+      {(['login','register'] as const).map(t => (
+        <button key={t} type="button" onClick={() => onSwitch(t)}
+          className={cn('flex-1 py-2 text-sm font-semibold rounded-lg transition-all',
+            active === t ? 'bg-white shadow-sm' : 'text-white/60 hover:text-white'
+          )}
+          style={active === t ? { color: 'var(--navy)' } : {}}>
+          {t === 'login' ? 'Sign In' : 'Create Account'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function BackBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm">
+      <ArrowLeft className="h-4 w-4"/>Back
+    </button>
+  )
+}
+
 function Field({ label, value, onChange, placeholder, type }: {
   label: string; value: string; onChange: (v: string) => void; placeholder: string; type: string
 }) {
@@ -288,9 +460,9 @@ function PasswordField({ value, onChange, show, onToggle }: {
       <label className="block text-sm font-medium text-white/80 mb-1.5">Password</label>
       <div className="relative">
         <input type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)}
-          placeholder="••••••••"
+          placeholder="Min. 6 characters"
           className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-white placeholder:text-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 pr-11"/>
-        <button onClick={onToggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+        <button type="button" onClick={onToggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
           {show ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
         </button>
       </div>
@@ -300,8 +472,8 @@ function PasswordField({ value, onChange, show, onToggle }: {
 
 function SubmitBtn({ loading, onClick, label }: { loading: boolean; onClick: () => void; label: string }) {
   return (
-    <button onClick={onClick} disabled={loading}
-      className="w-full rounded-xl py-3.5 font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity hover:opacity-90 mt-2"
+    <button type="button" onClick={onClick} disabled={loading}
+      className="w-full rounded-xl py-3.5 font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity hover:opacity-90"
       style={{ background: 'var(--green)' }}>
       {loading && <Loader2 className="h-4 w-4 animate-spin"/>}{label}
     </button>
