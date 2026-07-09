@@ -1,5 +1,9 @@
-node_modules
-dist
+node_modules/
+.next/
+out/
 .env
-*.local
-tsconfig.tsbuildinfo
+.env.local
+*.db
+*.tsbuildinfo
+team-vite/node_modules/
+team-vite/.next/
