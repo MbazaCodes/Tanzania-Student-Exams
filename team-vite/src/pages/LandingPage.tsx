@@ -8,6 +8,12 @@ import { cn } from '@/lib/utils'
 
 export function LandingPage() {
   const navigate = useNavigate()
+  const navItems = [
+    { label: 'Features', href: '#features' },
+    { label: 'Subjects', href: '#subjects' },
+    { label: 'Levels', href: '#subjects' },
+    { label: 'For Schools', href: '#schools' },
+  ]
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -25,8 +31,8 @@ export function LandingPage() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden md:flex items-center gap-6 text-sm text-white/70 mr-4">
-              {['Features', 'Subjects', 'Levels', 'For Schools'].map(l => (
-                <a key={l} href="#" className="hover:text-white transition-colors">{l}</a>
+              {navItems.map(i => (
+                <a key={i.label} href={i.href} className="hover:text-white transition-colors">{i.label}</a>
               ))}
             </div>
             <button onClick={() => navigate('/auth')} className="rounded-lg px-4 py-2 text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition-colors hidden sm:inline-flex">
@@ -136,7 +142,7 @@ export function LandingPage() {
       </section>
 
       {/* ── FEATURES STRIP ──────────────────────────────── */}
-      <section className="py-6 border-b border-gray-100">
+      <section id="features" className="py-6 border-b border-gray-100">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
             {[
@@ -160,7 +166,7 @@ export function LandingPage() {
       </section>
 
       {/* ── SUBJECTS / LEVELS ───────────────────────────── */}
-      <section className="py-20 bg-gray-50">
+      <section id="subjects" className="py-20 bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-4 border" style={{ background: 'rgba(0,51,102,0.05)', borderColor: 'rgba(0,51,102,0.15)', color: 'var(--navy)' }}>
@@ -226,7 +232,7 @@ export function LandingPage() {
       </section>
 
       {/* ── FOR TEACHERS / SCHOOLS ──────────────────────── */}
-      <section className="py-20" style={{ background: 'linear-gradient(135deg, #001f3f 0%, #003366 100%)' }}>
+      <section id="schools" className="py-20" style={{ background: 'linear-gradient(135deg, #001f3f 0%, #003366 100%)' }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
             <div className="text-white">
