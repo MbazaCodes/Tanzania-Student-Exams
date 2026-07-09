@@ -7,9 +7,15 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
+    // Dedupe katex to prevent double-registration of accessibility-tree
+    dedupe: ['katex', 'react', 'react-dom'],
   },
   server: {
-    // Return index.html for all routes so React Router handles them
     historyApiFallback: true,
+    port: 5173,
+  },
+  optimizeDeps: {
+    include: ['katex'],
+    exclude: [],
   },
 })
