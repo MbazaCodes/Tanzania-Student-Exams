@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Library, Upload, FilePlus2, ClipboardList, PenSquare,
   CheckCircle2, BarChart3, ShieldCheck, GraduationCap,
-  Menu, X, CalendarClock, Bell, Wifi, User as UserIcon, LogOut,
+  Menu, X, CalendarClock, Bell, Wifi, User as UserIcon, LogOut, MessageSquare,
 } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
 import { getCurrentUser, getAllUsers, setSessionUid, signOut, subscribeToScheduleUpdates } from '@/lib/api'
@@ -20,6 +20,7 @@ import { ReviewSubmissions } from '@/components/examhub/tabs/ReviewSubmissions'
 import { MyResults } from '@/components/examhub/tabs/MyResults'
 import { AdminOverview } from '@/components/examhub/tabs/AdminOverview'
 import { BookLibrary } from '@/components/examhub/tabs/BookLibrary'
+import { Forum } from '@/components/examhub/tabs/Forum'
 import { Verifications } from '@/components/examhub/tabs/Verifications'
 import { ScheduleTab } from '@/components/examhub/tabs/ScheduleTab'
 import { cn } from '@/lib/utils'
@@ -38,6 +39,7 @@ const NAV: NavItem[] = [
   { id: 'admin',       label: 'Admin Overview',     icon: ShieldCheck,   roles: ['super_admin'] },
   { id: 'verifications',label: 'Verifications',       icon: ShieldCheck,   roles: ['super_admin'] },
   { id: 'book-library', label: 'Book Library',        icon: Library,       roles: ['student','teacher','super_admin'] },
+  { id: 'forum',        label: 'Forums',              icon: MessageSquare, roles: ['student','teacher','super_admin'] },
 ]
 
 const ROLE_COLOR: Record<string, string> = {
@@ -269,6 +271,7 @@ function TabContent({ tab, user }: { tab: TabId; user: UserType }) {
     case 'admin':        return <AdminOverview user={user}/>
     case 'verifications':return <Verifications user={user}/>
     case 'book-library': return <BookLibrary user={user}/>
+    case 'forum':        return <Forum user={user}/>
     default:            return <PapersLibrary user={user}/>
   }
 }

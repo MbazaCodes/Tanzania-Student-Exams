@@ -2,7 +2,7 @@ import { create } from 'zustand'
 export type TabId =
   | 'library' | 'schedule' | 'upload' | 'create-exam' | 'my-exams'
   | 'take-exam' | 'review' | 'results' | 'admin' | 'book-library'
-  | 'verifications'
+  | 'verifications' | 'forum'
 interface State {
   tab: TabId
   setTab: (t: TabId) => void

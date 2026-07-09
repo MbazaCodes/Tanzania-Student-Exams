@@ -642,3 +642,175 @@ export async function incrementResourceDownload(id: string) {
     // fallback - silently ignore if function not deployed yet
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FORUM
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ForumChannel {
+  id: string; level: string; subject: string; description: string | null
+  topic_count?: number; created_at: string
+}
+export interface ForumTopic {
+  id: string; channel_id: string; author_id: string; author?: User
+  title: string; body: string; is_pinned: boolean; is_locked: boolean
+  views: number; reply_count: number; last_reply_at: string; created_at: string
+}
+export interface ForumPost {
+  id: string; topic_id: string; author_id: string; author?: User
+  parent_id: string | null; parent?: ForumPost | null
+  body: string; image_url: string | null; file_url: string | null; file_name: string | null
+  is_solution: boolean; like_count: number
+  liked_by_me?: boolean
+  created_at: string; updated_at: string
+  replies?: ForumPost[]
+}
+
+export async function listForumChannels(level?: string): Promise<ForumChannel[]> {
+  let q = supabaseAdmin.from('forum_channels').select('*').order('subject')
+  if (level) q = q.eq('level', level)
+  const { data, error } = await q
+  if (error) throw new Error(error.message)
+  return (data ?? []) as ForumChannel[]
+}
+
+export async function listForumTopics(channelId: string): Promise<ForumTopic[]> {
+  const { data, error } = await supabaseAdmin
+    .from('forum_topics')
+    .select('*, author:users(id,name,role,avatar_url)')
+    .eq('channel_id', channelId)
+    .order('is_pinned', { ascending: false })
+    .order('last_reply_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return (data ?? []) as ForumTopic[]
+}
+
+export async function getForumTopic(id: string): Promise<ForumTopic> {
+  try { await supabaseAdmin.rpc('increment_topic_views', { p_topic_id: id }) } catch { /**/ }
+  const { data, error } = await supabaseAdmin
+    .from('forum_topics')
+    .select('*, author:users(id,name,role,avatar_url,subjects_taught,teaching_levels)')
+    .eq('id', id)
+    .single()
+  if (error) throw new Error(error.message)
+  return data as ForumTopic
+}
+
+export async function createForumTopic(body: {
+  channel_id: string; title: string; body: string
+}): Promise<ForumTopic> {
+  const uid = getSessionUid()
+  const { data, error } = await supabaseAdmin
+    .from('forum_topics')
+    .insert({ ...body, author_id: uid })
+    .select('*, author:users(id,name,role,avatar_url)')
+    .single()
+  if (error) throw new Error(error.message)
+  return data as ForumTopic
+}
+
+export async function updateForumTopic(id: string, body: Partial<{ title: string; body: string; is_pinned: boolean; is_locked: boolean }>) {
+  const { data, error } = await supabaseAdmin.from('forum_topics').update(body).eq('id', id).select().single()
+  if (error) throw new Error(error.message)
+  return data as ForumTopic
+}
+
+export async function deleteForumTopic(id: string) {
+  const { error } = await supabaseAdmin.from('forum_topics').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function listForumPosts(topicId: string): Promise<ForumPost[]> {
+  const uid = getSessionUid()
+  const { data, error } = await supabaseAdmin
+    .from('forum_posts')
+    .select('*, author:users(id,name,role,avatar_url,subjects_taught,teaching_levels)')
+    .eq('topic_id', topicId)
+    .order('created_at', { ascending: true })
+  if (error) throw new Error(error.message)
+
+  // Check likes for current user
+  let likedPostIds: string[] = []
+  if (uid) {
+    const { data: likes } = await supabaseAdmin
+      .from('forum_likes')
+      .select('post_id')
+      .eq('user_id', uid)
+      .in('post_id', (data ?? []).map((p: Record<string,unknown>) => p.id as string))
+    likedPostIds = (likes ?? []).map((l: Record<string,unknown>) => l.post_id as string)
+  }
+
+  // Build threaded structure — top-level posts + their replies
+  const posts = (data ?? []) as ForumPost[]
+  const withLikes = posts.map(p => ({ ...p, liked_by_me: likedPostIds.includes(p.id) }))
+  const topLevel = withLikes.filter(p => !p.parent_id)
+  const replies  = withLikes.filter(p => !!p.parent_id)
+  return topLevel.map(p => ({
+    ...p,
+    replies: replies.filter(r => r.parent_id === p.id),
+  }))
+}
+
+export async function createForumPost(body: {
+  topic_id: string; body: string; parent_id?: string
+  image_url?: string; file_url?: string; file_name?: string
+}): Promise<ForumPost> {
+  const uid = getSessionUid()
+  const { data, error } = await supabaseAdmin
+    .from('forum_posts')
+    .insert({ ...body, author_id: uid })
+    .select('*, author:users(id,name,role,avatar_url)')
+    .single()
+  if (error) throw new Error(error.message)
+  return data as ForumPost
+}
+
+export async function deleteForumPost(id: string) {
+  const { error } = await supabaseAdmin.from('forum_posts').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function markPostAsSolution(postId: string, topicId: string) {
+  // Unmark existing solution first
+  await supabaseAdmin.from('forum_posts').update({ is_solution: false }).eq('topic_id', topicId)
+  const { data, error } = await supabaseAdmin
+    .from('forum_posts').update({ is_solution: true }).eq('id', postId).select().single()
+  if (error) throw new Error(error.message)
+  return data as ForumPost
+}
+
+export async function toggleForumLike(postId: string) {
+  const uid = getSessionUid()
+  const { data, error } = await supabaseAdmin
+    .rpc('toggle_forum_like', { p_user_id: uid, p_post_id: postId })
+  if (error) throw new Error(error.message)
+  return (data?.[0] ?? { liked: false, like_count: 0 }) as { liked: boolean; like_count: number }
+}
+
+export async function uploadForumAttachment(file: File): Promise<{ url: string; name: string }> {
+  const ext = file.name.split('.').pop()
+  const path = `${getSessionUid()}/${Date.now()}.${ext}`
+  const { error } = await supabaseAdmin.storage.from('forum-attachments').upload(path, file, {
+    cacheControl: '3600', upsert: true, contentType: file.type,
+  })
+  if (error) throw new Error(error.message)
+  const { data } = supabaseAdmin.storage.from('forum-attachments').getPublicUrl(path)
+  return { url: data.publicUrl, name: file.name }
+}
+
+export function subscribeToForumPosts(topicId: string, callback: () => void) {
+  const channel = supabase
+    .channel(`forum-posts-${topicId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'forum_posts', filter: `topic_id=eq.${topicId}` }, callback)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'forum_likes' }, callback)
+    .subscribe()
+  return () => supabase.removeChannel(channel)
+}
+
+export function subscribeToForumTopics(channelId: string, callback: () => void) {
+  const channel = supabase
+    .channel(`forum-topics-${channelId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'forum_topics', filter: `channel_id=eq.${channelId}` }, callback)
+    .subscribe()
+  return () => supabase.removeChannel(channel)
+}
