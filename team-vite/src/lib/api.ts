@@ -1,5 +1,5 @@
 import { supabase, supabaseAdmin, STORAGE_BUCKET } from './supabase'
-import { gradeFor, type Exam, type Paper, type ScheduleItem, type Submission, type User } from './types'
+import { gradeFor, type Exam, type Paper, type ScheduleItem, type Submission, type User, type LibraryResource } from './types'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTH — Supabase Auth + profile row in users table
@@ -519,4 +519,115 @@ export function subscribeToScheduleUpdates(callback: () => void) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'schedule_items' }, callback)
     .subscribe()
   return () => supabase.removeChannel(channel)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VERIFICATION — teacher/school approval workflow
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+export async function submitVerificationRequest(body: {
+  user_id: string; role: string; school_name?: string
+  school_id?: string; message?: string
+}) {
+  const { data, error } = await supabaseAdmin
+    .from('verification_requests')
+    .upsert({ ...body, status: 'pending' }, { onConflict: 'user_id' })
+    .select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function listVerificationRequests(status?: string) {
+  let q = supabaseAdmin
+    .from('verification_requests')
+    .select('*, user:users(id,name,email,role,teacher_type,school_id,verification_status)')
+    .order('created_at', { ascending: false })
+  if (status) q = q.eq('status', status)
+  const { data, error } = await q
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function approveVerification(userId: string, note?: string) {
+  const reviewer = getSessionUid()
+  const { error } = await supabaseAdmin.rpc('approve_user_verification', {
+    p_user_id: userId, p_reviewer_id: reviewer, p_note: note ?? null,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function rejectVerification(userId: string, reason: string) {
+  const reviewer = getSessionUid()
+  const { error } = await supabaseAdmin.rpc('reject_user_verification', {
+    p_user_id: userId, p_reviewer_id: reviewer, p_reason: reason,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function grantAdminRole(userId: string) {
+  const { error } = await supabaseAdmin.from('users').update({
+    role: 'super_admin', verification_status: 'approved', is_active: true,
+  }).eq('id', userId)
+  if (error) throw new Error(error.message)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LIBRARY RESOURCES
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function listLibraryResources(params: Record<string, string> = {}): Promise<LibraryResource[]> {
+  let q = supabaseAdmin
+    .from('library_resources')
+    .select('*, contributed_by:users(id,name,role), school:schools(id,name)')
+    .order('created_at', { ascending: false })
+  if (params.type) q = q.eq('type', params.type)
+  if (params.subject) q = q.eq('subject', params.subject)
+  if (params.level) q = q.eq('level', params.level)
+  if (params.status) q = q.eq('status', params.status)
+  else q = q.eq('status', 'published')
+  const { data, error } = await q
+  if (error) throw new Error(error.message)
+  return (data ?? []) as LibraryResource[]
+}
+
+export async function createLibraryResource(body: Record<string, unknown>): Promise<LibraryResource> {
+  const uid = getSessionUid()
+  const { data, error } = await supabaseAdmin
+    .from('library_resources')
+    .insert({ ...body, contributed_by_id: uid })
+    .select().single()
+  if (error) throw new Error(error.message)
+  return data as LibraryResource
+}
+
+export async function updateLibraryResource(id: string, body: Partial<LibraryResource>): Promise<LibraryResource> {
+  const { data, error } = await supabaseAdmin
+    .from('library_resources').update(body).eq('id', id).select().single()
+  if (error) throw new Error(error.message)
+  return data as LibraryResource
+}
+
+export async function deleteLibraryResource(id: string) {
+  const { error } = await supabaseAdmin.from('library_resources').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function uploadLibraryFile(file: File, resourceId: string): Promise<string> {
+  const ext = file.name.split('.').pop()
+  const path = `${resourceId}/${Date.now()}.${ext}`
+  const { error } = await supabaseAdmin.storage.from('library').upload(path, file, {
+    cacheControl: '3600', upsert: true, contentType: file.type,
+  })
+  if (error) throw new Error(error.message)
+  const { data } = supabaseAdmin.storage.from('library').getPublicUrl(path)
+  return data.publicUrl
+}
+
+export async function incrementResourceDownload(id: string) {
+  try {
+    await supabaseAdmin.rpc('increment_download', { p_paper_id: id })
+  } catch {
+    // fallback - silently ignore if function not deployed yet
+  }
 }

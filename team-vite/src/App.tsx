@@ -19,6 +19,8 @@ import { TakeExam } from '@/components/examhub/tabs/TakeExam'
 import { ReviewSubmissions } from '@/components/examhub/tabs/ReviewSubmissions'
 import { MyResults } from '@/components/examhub/tabs/MyResults'
 import { AdminOverview } from '@/components/examhub/tabs/AdminOverview'
+import { BookLibrary } from '@/components/examhub/tabs/BookLibrary'
+import { Verifications } from '@/components/examhub/tabs/Verifications'
 import { ScheduleTab } from '@/components/examhub/tabs/ScheduleTab'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +36,8 @@ const NAV: NavItem[] = [
   { id: 'my-exams',    label: 'My Exams',           icon: ClipboardList, roles: ['teacher','school_admin','super_admin'] },
   { id: 'review',      label: 'Review Submissions', icon: CheckCircle2,  roles: ['teacher','school_admin','super_admin'] },
   { id: 'admin',       label: 'Admin Overview',     icon: ShieldCheck,   roles: ['super_admin'] },
+  { id: 'verifications',label: 'Verifications',       icon: ShieldCheck,   roles: ['super_admin'] },
+  { id: 'book-library', label: 'Book Library',        icon: Library,       roles: ['student','teacher','school_admin','super_admin'] },
 ]
 
 const ROLE_COLOR: Record<string, string> = {
@@ -246,7 +250,9 @@ function TabContent({ tab, user }: { tab: TabId; user: UserType }) {
     case 'take-exam':   return <TakeExam user={user}/>
     case 'review':      return <ReviewSubmissions user={user}/>
     case 'results':     return <MyResults user={user}/>
-    case 'admin':       return <AdminOverview user={user}/>
+    case 'admin':        return <AdminOverview user={user}/>
+    case 'verifications':return <Verifications user={user}/>
+    case 'book-library': return <BookLibrary user={user}/>
     default:            return <PapersLibrary user={user}/>
   }
 }

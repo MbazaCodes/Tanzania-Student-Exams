@@ -20,7 +20,10 @@ import {
   type User, type Question, EXAM_TYPES,
 } from "@/lib/types";
 import { toast } from "sonner";
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils'
+import { MathText, MathBlock } from '../MathRenderer'
+import { DataTable, SimpleChart } from '../SimpleChart'
+import type { QuestionTableData, QuestionGraphData } from '@/lib/types';
 
 // ─── Exam list ──────────────────────────────────────────────────────────────
 export function TakeExam({ user }: { user: User }) {
@@ -515,57 +518,65 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function QuestionInput({ q, value, onChange }: { q: Question; value: string; onChange: (v: string) => void }) {
-  if (q.type === "mcq") {
-    let opts: string[] = [];
-    try { opts = JSON.parse(q.options); } catch { /**/ }
+  // Render formula if present
+  const formulaEl = q.formula ? (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 mb-3">
+      <p className="text-xs font-medium text-amber-700 mb-1">Formula:</p>
+      <MathBlock latex={q.formula} />
+    </div>
+  ) : null
+
+  // Render table if present
+  let tableData: QuestionTableData | null = null
+  try { if (q.table_data) tableData = JSON.parse(q.table_data) } catch { /**/ }
+  const tableEl = tableData ? <DataTable data={tableData} className="mb-3" /> : null
+
+  // Render graph if present
+  let graphData: QuestionGraphData | null = null
+  try { if (q.graph_data) graphData = JSON.parse(q.graph_data) } catch { /**/ }
+  const graphEl = graphData ? <SimpleChart data={graphData} className="mb-3" /> : null
+
+  if (q.type === "mcq" || q.type === "truefalse") {
+    let opts: string[] = []
+    if (q.type === "mcq") { try { opts = JSON.parse(q.options) } catch { /**/ } }
+    else opts = ["true", "false"]
     return (
-      <RadioGroup value={value} onValueChange={onChange} className="gap-2">
-        {opts.map((o, i) => (
-          <label key={i} className={cn(
-            "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors",
-            value === String(i) ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
-          )}>
-            <RadioGroupItem value={String(i)} id={`${q.id}-${i}`} />
-            <span className="text-sm">{o}</span>
-          </label>
-        ))}
-      </RadioGroup>
-    );
+      <div>
+        {formulaEl}{tableEl}{graphEl}
+        <RadioGroup value={value} onValueChange={onChange} className={q.type === "truefalse" ? "flex gap-4" : "gap-2"}>
+          {opts.map((o, i) => {
+            const val = q.type === "mcq" ? String(i) : o
+            return (
+              <label key={i} className={cn(
+                "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors",
+                q.type === "truefalse" && "capitalize",
+                value === val ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
+              )}>
+                <RadioGroupItem value={val} id={`${q.id}-${i}`} />
+                <span className="text-sm font-medium">{o}</span>
+              </label>
+            )
+          })}
+        </RadioGroup>
+      </div>
+    )
   }
-  if (q.type === "truefalse") {
+  if (q.type === "formula" || q.type === "table" || q.type === "graph" || q.type === "short") {
     return (
-      <RadioGroup value={value} onValueChange={onChange} className="flex gap-4">
-        {["true", "false"].map((v) => (
-          <label key={v} className={cn(
-            "flex items-center gap-2 rounded-lg border px-4 py-2.5 cursor-pointer transition-colors capitalize",
-            value === v ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
-          )}>
-            <RadioGroupItem value={v} id={`${q.id}-${v}`} />
-            <span className="text-sm font-medium">{v}</span>
-          </label>
-        ))}
-      </RadioGroup>
-    );
+      <div>
+        {formulaEl}{tableEl}{graphEl}
+        <Input value={value} onChange={e => onChange(e.target.value)} placeholder="Type your answer…"
+          className="max-w-sm" onKeyDown={e => { if (e.key === "Enter") e.preventDefault() }}/>
+      </div>
+    )
   }
-  if (q.type === "short") {
-    return (
-      <Input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Type your answer…"
-        className="max-w-sm"
-        onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
-      />
-    );
-  }
+  // essay
   return (
-    <Textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      rows={5}
-      placeholder="Write your essay answer here…"
-    />
-  );
+    <div>
+      {formulaEl}{tableEl}{graphEl}
+      <Textarea value={value} onChange={e => onChange(e.target.value)} rows={5} placeholder="Write your essay answer here…"/>
+    </div>
+  )
 }
 
 // ─── Result screen ───────────────────────────────────────────────────────────
