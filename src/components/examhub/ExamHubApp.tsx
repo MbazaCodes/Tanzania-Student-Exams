@@ -15,6 +15,16 @@ import {
   RefreshCw,
   CalendarClock,
   Bell,
+  Sparkles,
+  BookOpen,
+  Layers,
+  School,
+  Clock,
+  Award,
+  Users,
+  FileText,
+  Zap,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,9 +35,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
 import { api } from "@/lib/api-client";
-import type { User } from "@/lib/types";
+import { LEVELS, SUBJECTS, levelLabel, type User } from "@/lib/types";
 import { useExamHub, type TabId } from "./store";
 import { PapersLibrary } from "./tabs/PapersLibrary";
 import { UploadPaper } from "./tabs/UploadPaper";
@@ -77,10 +93,12 @@ export function ExamHubApp() {
   const [switchers, setSwitchers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [navDialog, setNavDialog] = useState<null | "features" | "subjects" | "levels" | "schools">(null);
   const tab = useExamHub((s) => s.tab);
   const setTab = useExamHub((s) => s.setTab);
   const nonce = useExamHub((s) => s.nonce);
   const bump = useExamHub((s) => s.bump);
+  const setLibraryFilter = useExamHub((s) => s.setLibraryFilter);
 
   const loadMe = useCallback(async () => {
     try {
@@ -119,6 +137,25 @@ export function ExamHubApp() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Seed failed");
     }
+  };
+
+  // Header nav actions — each wires to real app behaviour (not dead links)
+  const goToLibraryFiltered = (filter: { subject?: string; level?: string }) => {
+    setLibraryFilter(filter);
+    setTab("library");
+    setNavDialog(null);
+  };
+  const handleForSchools = () => {
+    setNavDialog("schools");
+  };
+  const NAV_LINKS: { id: typeof navDialog; label: string }[] = [
+    { id: "features", label: "Features" },
+    { id: "subjects", label: "Subjects" },
+    { id: "levels", label: "Levels" },
+    { id: "schools", label: "For Schools" },
+  ];
+  const onNavClick = (id: typeof navDialog) => {
+    setNavDialog(id);
   };
 
   if (loading) {
@@ -166,6 +203,19 @@ export function ExamHubApp() {
               <div className="text-[11px] font-normal text-white/70">Papers · Exams · Timetable</div>
             </div>
           </div>
+
+          {/* Header nav links — functional, not dead anchors */}
+          <nav className="hidden lg:flex items-center gap-1 ml-4">
+            {NAV_LINKS.map((l) => (
+              <button
+                key={l.id}
+                onClick={() => onNavClick(l.id)}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                {l.label}
+              </button>
+            ))}
+          </nav>
 
           <div className="ml-auto flex items-center gap-2">
             <Button
@@ -242,6 +292,16 @@ export function ExamHubApp() {
                   }}
                 />
               ))}
+              <div className="my-2 border-t" />
+              {NAV_LINKS.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => { onNavClick(l.id); setMobileOpen(false); }}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-green/10 hover:text-navy"
+                >
+                  <ChevronRight className="h-4 w-4" /> {l.label}
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -267,7 +327,174 @@ export function ExamHubApp() {
           </div>
         </div>
       </footer>
+
+      {/* Header nav dialogs — Features / Subjects / Levels / Schools */}
+      <FeaturesDialog open={navDialog === "features"} onClose={() => setNavDialog(null)} onGoToTab={setTab} />
+      <SubjectsDialog open={navDialog === "subjects"} onClose={() => setNavDialog(null)} onPick={(subject) => goToLibraryFiltered({ subject })} />
+      <LevelsDialog open={navDialog === "levels"} onClose={() => setNavDialog(null)} onPick={(level) => goToLibraryFiltered({ level })} />
+      <SchoolsDialog open={navDialog === "schools"} onClose={() => setNavDialog(null)} role={role} onGoToTab={setTab} />
     </div>
+  );
+}
+
+/* ===== Features dialog ===== */
+const FEATURES = [
+  { icon: Library, title: "Papers Library", desc: "Browse NECTA past papers, mocks & school exams. Filter by subject, level & status.", tab: "library" as TabId, color: "text-navy bg-navy/10" },
+  { icon: CalendarClock, title: "Schedule & Timetable", desc: "Live countdown timers for quizzes of the day, exams, tests & assignments with start alerts.", tab: "schedule" as TabId, color: "text-green bg-green/10" },
+  { icon: FilePlus2, title: "Create Exams", desc: "Build quizzes with MCQ, True/False, Short answer & Essay questions. Publish to students instantly.", tab: "create-exam" as TabId, color: "text-sky bg-sky/10" },
+  { icon: CheckCircle2, title: "Auto-Marking", desc: "Objective questions marked instantly. Teachers review essays & publish results with feedback.", tab: "review" as TabId, color: "text-gold bg-gold/10" },
+  { icon: BarChart3, title: "Results & Analytics", desc: "Students see grades (A–F) and feedback. Admins see platform-wide submission stats.", tab: "results" as TabId, color: "text-navy bg-navy/10" },
+  { icon: ShieldCheck, title: "Role-Based Access", desc: "Students, teachers, school admins & super admins — each sees exactly what they need.", tab: "admin" as TabId, color: "text-green bg-green/10" },
+];
+
+function FeaturesDialog({ open, onClose, onGoToTab }: { open: boolean; onClose: () => void; onGoToTab: (t: TabId) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto scroll-soft">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-navy"><Sparkles className="h-5 w-5 text-green" /> Platform Features</DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          {FEATURES.map((f) => {
+            const Icon = f.icon;
+            return (
+              <button
+                key={f.title}
+                onClick={() => { onGoToTab(f.tab); onClose(); }}
+                className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-left hover:border-green/40 hover:shadow-card transition-all"
+              >
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${f.color}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1 font-semibold text-navy">{f.title} <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-green group-hover:translate-x-0.5 transition-all" /></div>
+                  <p className="mt-0.5 text-xs text-muted-foreground leading-snug">{f.desc}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <p className="pt-2 text-center text-xs text-muted-foreground">Click any feature to jump straight to it.</p>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ===== Subjects dialog ===== */
+const SUBJECT_ICONS: Record<string, string> = {
+  Biology: "🧬", Chemistry: "⚗️", Physics: "🔭", Mathematics: "📐",
+  English: "📖", Kiswahili: "🗣️", Geography: "🌍", History: "📜",
+  Civics: "⚖️", "Book-Keeping": "簿", Commerce: "💼", "General Studies": "🎓",
+};
+
+function SubjectsDialog({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (s: string) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto scroll-soft">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-navy"><BookOpen className="h-5 w-5 text-green" /> Browse by Subject</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground pb-2">Pick a subject to filter the Papers Library.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          {SUBJECTS.map((s) => (
+            <button
+              key={s}
+              onClick={() => onPick(s)}
+              className="group flex items-center gap-2.5 rounded-lg border border-border bg-card p-3 text-left hover:border-green/40 hover:bg-green/5 transition-all"
+            >
+              <span className="text-xl">{SUBJECT_ICONS[s] ?? "📘"}</span>
+              <span className="text-sm font-medium text-navy group-hover:text-green">{s}</span>
+              <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground group-hover:text-green group-hover:translate-x-0.5 transition-all" />
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ===== Levels dialog ===== */
+function LevelsDialog({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (l: string) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-navy"><Layers className="h-5 w-5 text-green" /> Browse by Education Level</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground pb-2">Pick a level to filter the Papers Library.</p>
+        <div className="space-y-2">
+          {LEVELS.map((l) => (
+            <button
+              key={l.value}
+              onClick={() => onPick(l.value)}
+              className="group flex w-full items-center gap-3 rounded-lg border border-border bg-card p-3.5 text-left hover:border-green/40 hover:bg-green/5 transition-all"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy/10 text-navy font-bold text-sm">
+                {l.value.includes("standard") ? "S" : "F"}{l.value.split("_")[1]}
+              </div>
+              <span className="text-sm font-medium text-navy group-hover:text-green flex-1">{l.label}</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-green group-hover:translate-x-0.5 transition-all" />
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ===== For Schools dialog ===== */
+const SCHOOL_FEATURES = [
+  { icon: Library, title: "School Papers Library", desc: "Upload & publish your school's past papers, mocks and regional exams. Control visibility per class." },
+  { icon: FilePlus2, title: "Build School Exams", desc: "Create custom exams and quizzes from any paper. MCQ, True/False, Short answer & Essay." },
+  { icon: CalendarClock, title: "Timetable & Alerts", desc: "Schedule quizzes of the day, tests and assignments with live countdown timers for students." },
+  { icon: CheckCircle2, title: "Review & Marking", desc: "Auto-mark objective questions. Review essays, give feedback and publish results in one click." },
+  { icon: BarChart3, title: "Submission Analytics", desc: "See how many students attempted each exam, average scores and completion rates." },
+  { icon: Users, title: "Role Hierarchy", desc: "School admins manage teachers & students. Teachers manage their subjects. Students take exams." },
+];
+
+function SchoolsDialog({ open, onClose, role, onGoToTab }: { open: boolean; onClose: () => void; role: string; onGoToTab: (t: TabId) => void }) {
+  const canAdmin = role === "super_admin" || role === "school_admin";
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto scroll-soft">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-navy"><School className="h-5 w-5 text-green" /> For Schools</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground pb-2">
+          Everything a school needs to run digital exams — from uploading papers to publishing results.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {SCHOOL_FEATURES.map((f) => {
+            const Icon = f.icon;
+            return (
+              <div key={f.title} className="flex items-start gap-3 rounded-xl border border-border bg-card p-3.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-green/10 text-green">
+                  <Icon className="h-4.5 w-4.5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-navy text-sm">{f.title}</div>
+                  <p className="mt-0.5 text-xs text-muted-foreground leading-snug">{f.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t mt-2">
+          <p className="text-xs text-muted-foreground">
+            {canAdmin
+              ? "You're signed in as an admin — jump to the Admin Overview to manage your school."
+              : "Switch to a School Admin or Super Admin account (top-right) to access school management tools."}
+          </p>
+          <Button
+            onClick={() => { onGoToTab("admin"); onClose(); }}
+            disabled={!canAdmin}
+            className="bg-green hover:bg-green/90 shrink-0"
+          >
+            <ShieldCheck className="mr-1.5 h-4 w-4" /> Admin Overview
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

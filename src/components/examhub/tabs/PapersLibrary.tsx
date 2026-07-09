@@ -72,7 +72,19 @@ export function PapersLibrary({ user }: { user: User }) {
   const [level, setLevel] = useState("all");
   const setTab = useExamHub((s) => s.setTab);
   const nonce = useExamHub((s) => s.nonce);
+  const libraryFilter = useExamHub((s) => s.libraryFilter);
+  const setLibraryFilter = useExamHub((s) => s.setLibraryFilter);
   const manager = canManage(user.role);
+
+  // Apply filter coming from header nav links (Subjects / Levels)
+  useEffect(() => {
+    if (libraryFilter) {
+      if (libraryFilter.subject) setSubject(libraryFilter.subject);
+      if (libraryFilter.level) setLevel(libraryFilter.level);
+      // consume it so it doesn't re-apply on every render
+      setLibraryFilter(null);
+    }
+  }, [libraryFilter, setLibraryFilter]);
 
   const load = useCallback(async () => {
     setLoading(true);
