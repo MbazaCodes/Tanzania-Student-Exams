@@ -78,7 +78,7 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function getAllUsers(): Promise<User[]> {
-  const { data } = await supabaseAdmin.from('users').select('id,name,email,role,teacher_type,school_id,created_at').order('role')
+  const { data } = await supabaseAdmin.from('users').select('id,name,email,role,school_id,created_at').order('role')
   return (data ?? []) as User[]
 }
 
@@ -215,7 +215,7 @@ export async function deletePaper(id: string) {
 export async function listExams(params: Record<string, string> = {}): Promise<Exam[]> {
   let q = supabaseAdmin
     .from('exams')
-    .select('*, created_by:users(id,name,role,teacher_type), school:schools(id,name), questions(id), submissions(id)')
+    .select('*, created_by:users(id,name,role), school:schools(id,name), questions(id), submissions(id)')
     .order('created_at', { ascending: false })
   if (params.scope === 'published') q = q.eq('status', 'published')
   if (params.status) q = q.eq('status', params.status)
@@ -238,7 +238,7 @@ export async function listExams(params: Record<string, string> = {}): Promise<Ex
 export async function getExam(id: string): Promise<Exam> {
   const { data, error } = await supabaseAdmin
     .from('exams')
-    .select('*, created_by:users(id,name,role,teacher_type), school:schools(id,name), questions(*)')
+    .select('*, created_by:users(id,name,role), school:schools(id,name), questions(*)')
     .eq('id', id)
     .single()
   if (error) throw new Error(error.message)
@@ -470,7 +470,7 @@ export async function getStats(schoolId?: string) {
 export async function listSchedule(params: Record<string, string> = {}): Promise<ScheduleItem[]> {
   let q = supabaseAdmin
     .from('schedule_items')
-    .select('*, created_by:users(id,name,role,teacher_type), school:schools(id,name), exam:exams(id,title,exam_type,status)')
+    .select('*, created_by:users(id,name,role), school:schools(id,name), exam:exams(id,title,exam_type,status)')
     .order('scheduled_at', { ascending: true })
   if (params.school_id) q = q.eq('school_id', params.school_id)
   if (params.status) q = q.eq('status', params.status)
@@ -541,9 +541,13 @@ export async function submitVerificationRequest(body: {
   user_id: string; role: string; school_name?: string
   school_id?: string; message?: string
 }) {
+  // Delete any existing pending request for this user first
+  await supabaseAdmin.from('verification_requests')
+    .delete().eq('user_id', body.user_id).eq('status', 'pending')
+
   const { data, error } = await supabaseAdmin
     .from('verification_requests')
-    .upsert({ ...body, status: 'pending' }, { onConflict: 'user_id' })
+    .insert({ ...body, status: 'pending' })
     .select().single()
   if (error) throw new Error(error.message)
   return data
@@ -552,7 +556,7 @@ export async function submitVerificationRequest(body: {
 export async function listVerificationRequests(status?: string) {
   let q = supabaseAdmin
     .from('verification_requests')
-    .select('*, user:users(id,name,email,role,teacher_type,school_id,verification_status)')
+    .select('*, user:users(id,name,email,role,school_id,verification_status)')
     .order('created_at', { ascending: false })
   if (status) q = q.eq('status', status)
   const { data, error } = await q
@@ -813,4 +817,177 @@ export function subscribeToForumTopics(channelId: string, callback: () => void) 
     .on('postgres_changes', { event: '*', schema: 'public', table: 'forum_topics', filter: `channel_id=eq.${channelId}` }, callback)
     .subscribe()
   return () => supabase.removeChannel(channel)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ONLINE SESSIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface OnlineSession {
+  id: string; teacher_id: string; teacher?: User
+  title: string; description: string | null; subject: string; level: string
+  session_type: 'group' | 'private'; status: 'scheduled' | 'live' | 'ended' | 'cancelled'
+  scheduled_at: string; duration_mins: number; max_students: number
+  price_tzs: number; is_free: boolean; room_url: string | null
+  recording_url: string | null; enrolled_count: number
+  created_at: string; updated_at: string
+  is_enrolled?: boolean
+}
+
+export interface SessionMessage {
+  id: string; session_id: string; sender_id: string; sender?: User
+  body: string; type: string; file_url: string | null; created_at: string
+}
+
+export interface Payment {
+  id: string; student_id: string; teacher_id: string | null
+  session_id: string | null; amount_tzs: number; phone_number: string
+  network: string; reference: string | null; status: string
+  description: string | null; paid_at: string | null; created_at: string
+}
+
+export async function listOnlineSessions(params: Record<string, string> = {}): Promise<OnlineSession[]> {
+  const uid = getSessionUid()
+  let q = supabaseAdmin
+    .from('online_sessions')
+    .select('*, teacher:users(id,name,role,avatar_url,rating,total_sessions,bio_public,subjects_taught)')
+    .order('scheduled_at', { ascending: true })
+  if (params.teacher_id) q = q.eq('teacher_id', params.teacher_id)
+  if (params.subject) q = q.eq('subject', params.subject)
+  if (params.level) q = q.eq('level', params.level)
+  if (params.status) q = q.eq('status', params.status)
+  else q = q.in('status', ['scheduled', 'live'])
+  const { data, error } = await q
+  if (error) throw new Error(error.message)
+
+  // Check enrollment for current user
+  let enrolledIds: string[] = []
+  if (uid) {
+    const { data: enr } = await supabaseAdmin.from('session_enrollments')
+      .select('session_id').eq('student_id', uid)
+    enrolledIds = (enr ?? []).map((e: Record<string, unknown>) => e.session_id as string)
+  }
+
+  return ((data ?? []) as OnlineSession[]).map(s => ({
+    ...s, is_enrolled: enrolledIds.includes(s.id)
+  }))
+}
+
+export async function createOnlineSession(body: Partial<OnlineSession>): Promise<OnlineSession> {
+  const uid = getSessionUid()
+  const { data, error } = await supabaseAdmin
+    .from('online_sessions')
+    .insert({ ...body, teacher_id: uid,
+      room_url: `https://meet.jit.si/examhub-${Date.now()}` })
+    .select('*, teacher:users(id,name,role)').single()
+  if (error) throw new Error(error.message)
+  return data as OnlineSession
+}
+
+export async function updateOnlineSession(id: string, body: Partial<OnlineSession>): Promise<OnlineSession> {
+  const { data, error } = await supabaseAdmin
+    .from('online_sessions').update(body).eq('id', id).select().single()
+  if (error) throw new Error(error.message)
+  return data as OnlineSession
+}
+
+export async function deleteOnlineSession(id: string) {
+  const { error } = await supabaseAdmin.from('online_sessions').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function enrollInSession(sessionId: string): Promise<void> {
+  const uid = getSessionUid()
+  const { error } = await supabaseAdmin.from('session_enrollments')
+    .insert({ session_id: sessionId, student_id: uid })
+  if (error && !error.message.includes('duplicate')) throw new Error(error.message)
+}
+
+export async function listSessionEnrollments(sessionId: string) {
+  const { data, error } = await supabaseAdmin.from('session_enrollments')
+    .select('*, student:users(id,name,role,avatar_url)')
+    .eq('session_id', sessionId)
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function listSessionMessages(sessionId: string): Promise<SessionMessage[]> {
+  const { data, error } = await supabaseAdmin.from('session_messages')
+    .select('*, sender:users(id,name,role,avatar_url)')
+    .eq('session_id', sessionId).order('created_at', { ascending: true })
+  if (error) throw new Error(error.message)
+  return (data ?? []) as SessionMessage[]
+}
+
+export async function sendSessionMessage(sessionId: string, body: string, type = 'text', file_url?: string) {
+  const uid = getSessionUid()
+  const { data, error } = await supabaseAdmin.from('session_messages')
+    .insert({ session_id: sessionId, sender_id: uid, body, type, file_url })
+    .select('*, sender:users(id,name,role,avatar_url)').single()
+  if (error) throw new Error(error.message)
+  return data as SessionMessage
+}
+
+export function subscribeToSessionMessages(sessionId: string, callback: () => void) {
+  const ch = supabase.channel(`session-${sessionId}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'session_messages',
+      filter: `session_id=eq.${sessionId}` }, callback)
+    .subscribe()
+  return () => supabase.removeChannel(ch)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENTS — Lipa Namba (M-Pesa / Tigo / Airtel)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function initiatePayment(body: {
+  session_id: string; phone_number: string; network: string; amount_tzs: number
+}): Promise<Payment> {
+  const uid = getSessionUid()
+  const session = await supabaseAdmin.from('online_sessions').select('teacher_id,title').eq('id', body.session_id).single()
+  const { data, error } = await supabaseAdmin.from('payments').insert({
+    student_id: uid,
+    teacher_id: session.data?.teacher_id,
+    session_id: body.session_id,
+    amount_tzs: body.amount_tzs,
+    phone_number: body.phone_number,
+    network: body.network,
+    lipa_namba: '123456',
+    description: `ExamHub Session: ${session.data?.title}`,
+    status: 'pending',
+  }).select().single()
+  if (error) throw new Error(error.message)
+  return data as Payment
+}
+
+export async function confirmPayment(paymentId: string): Promise<void> {
+  // Simulate payment confirmation (in production: webhook from payment provider)
+  const ref = `REF${Date.now().toString(36).toUpperCase()}`
+  try {
+    await supabaseAdmin.rpc('complete_payment', { p_payment_id: paymentId, p_reference: ref })
+  } catch {
+    // fallback manual update
+    const { data: pay } = await supabaseAdmin.from('payments').update({
+      status: 'completed', reference: ref, paid_at: new Date().toISOString()
+    }).eq('id', paymentId).select().single()
+    if (pay?.session_id) {
+      await enrollInSession(pay.session_id)
+    }
+  }
+}
+
+export async function getMyPayments(): Promise<Payment[]> {
+  const uid = getSessionUid()
+  const { data, error } = await supabaseAdmin.from('payments')
+    .select('*, session:online_sessions(id,title,subject)').eq('student_id', uid)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return (data ?? []) as Payment[]
+}
+
+export async function rateTeacher(body: { teacher_id: string; session_id?: string; rating: number; review?: string }) {
+  const uid = getSessionUid()
+  const { error } = await supabaseAdmin.from('teacher_ratings')
+    .upsert({ ...body, student_id: uid }, { onConflict: 'teacher_id,student_id,session_id' })
+  if (error) throw new Error(error.message)
 }

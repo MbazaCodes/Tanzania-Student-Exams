@@ -21,7 +21,9 @@ export interface User {
   verification_status?: VerificationStatus | null
   verified_at?: string | null
   school_id: string | null; school?: School | null
-  avatar_url?: string | null; bio?: string | null; phone?: string | null
+  avatar_url?: string | null; bio?: string | null; bio_public?: string | null
+  phone?: string | null; rating?: number | null; total_sessions?: number | null
+  is_premium?: boolean | null; premium_rate?: number | null
   school_name?: string | null
   region?: string | null
   district?: string | null
