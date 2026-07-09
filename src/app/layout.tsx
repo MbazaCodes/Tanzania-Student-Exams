@@ -18,7 +18,8 @@ export const metadata: Metadata = {
   keywords: ["ExamHub", "exams", "papers", "NECTA", "quiz", "marking", "Tanzania"],
   authors: [{ name: "ExamHub" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: [{ url: "/favicon.png", type: "image/png" }, { url: "/favicon.svg", type: "image/svg+xml" }],
+    apple: "/favicon.png",
   },
 };
 

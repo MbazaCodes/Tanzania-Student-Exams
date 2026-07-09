@@ -157,6 +157,7 @@ export function ExamHubApp() {
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
           <div className="flex items-center gap-2.5 font-semibold">
+            <img src="/tz-coat-of-arms.png" alt="Tanzania Coat of Arms" className="h-9 w-9 object-contain" />
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green text-white shadow-sm ring-2 ring-white/20">
               <GraduationCap className="h-5 w-5" />
             </div>

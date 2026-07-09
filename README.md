@@ -2,7 +2,16 @@
 
 A national digital exam-preparation platform for Tanzania — NECTA past papers, live exams & quizzes, auto-marking, teacher review, and a scheduled timetable with countdown timers and alerts.
 
-Built with **Next.js 16 + TypeScript + Prisma + Tailwind CSS + shadcn/ui**.
+> **Team sync note (2026-07-09):** This repository now contains **two parallel implementations** so no team member's work is left behind. They share the same Tanzanian navy/green/gold theme and the same examhub feature set (papers, exams, schedule, results).
+>
+> | Folder | Stack | Status | Run |
+> |---|---|---|---|
+> | `/` (root) | **Next.js 16** + Prisma + shadcn/ui | Active — runs in the dev sandbox on port 3000 | `bun run dev` |
+> | [`/team-vite`](./team-vite) | **Vite** + React Router 7 + Supabase | Team branch — landing page, auth, Supabase backend | `cd team-vite && npm run dev` |
+>
+> Both implementations include the same tabs: Papers Library, Schedule & Alerts, Upload Paper, Create Exam, My Exams, Take Exam, Review Submissions, My Results, Admin Overview.
+
+Built with **Next.js 16 + TypeScript + Prisma + Tailwind CSS + shadcn/ui** (root) and **Vite + React Router + Supabase** (`team-vite/`).
 
 ## Features
 
