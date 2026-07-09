@@ -1,68 +1,46 @@
-# Tanzania Student Exams 🇹🇿
+# ExamHub Tanzania 🎓
 
-A national digital exam-preparation platform for Tanzania — NECTA past papers, live exams & quizzes, auto-marking, teacher review, and a scheduled timetable with countdown timers and alerts.
+Tanzania's digital exam platform — NECTA past papers, online quizzes, per-question timers, OCR upload, book library.
 
-> **Team sync note (2026-07-09):** This repository now contains **two parallel implementations** so no team member's work is left behind. They share the same Tanzanian navy/green/gold theme and the same examhub feature set (papers, exams, schedule, results).
->
-> | Folder | Stack | Status | Run |
-> |---|---|---|---|
-> | `/` (root) | **Next.js 16** + Prisma + shadcn/ui | Active — runs in the dev sandbox on port 3000 | `bun run dev` |
-> | [`/team-vite`](./team-vite) | **Vite** + React Router 7 + Supabase | Team branch — landing page, auth, Supabase backend | `cd team-vite && npm run dev` |
->
-> Both implementations include the same tabs: Papers Library, Schedule & Alerts, Upload Paper, Create Exam, My Exams, Take Exam, Review Submissions, My Results, Admin Overview.
-
-Built with **Next.js 16 + TypeScript + Prisma + Tailwind CSS + shadcn/ui** (root) and **Vite + React Router + Supabase** (`team-vite/`).
-
-## Features
-
-### Papers Library
-- Upload past papers (NECTA, mock, regional, school exams)
-- Draft → Published → Archived lifecycle
-- Filter by subject, level, status; full-text search
-- Build an exam directly from any uploaded paper
-
-### Exams & Quizzes
-- Create exams with 4 question types: **MCQ, True/False, Short answer, Essay**
-- Publish to students; students take exams with a live countdown timer (auto-submit on timeout)
-- **Auto-marking** for objective questions (MCQ / True-False / Short)
-- Teacher **review & override** for essays with per-question feedback
-- **Publish results** to students with grades (A–F)
-
-### Schedule & Timetable
-- Schedule **Quiz of the Day**, exams, tests, and assignments
-- Live **countdown timer** to the next scheduled item
-- **Alert badges** — "Starts soon", "Live now", "Overdue"
-- Role-based: teachers/schools/admins create; students view
-
-### Roles
-- **Student** — take exams, view results, follow timetable
-- **Teacher** — upload papers, create exams, review submissions, schedule items
-- **School Admin** — everything a teacher can do, scoped to their school
-- **Super Admin** — platform-wide oversight & management
+**Stack:** Vite 6 · React 19 · TypeScript · Supabase · Tailwind v4
 
 ## Quick Start
 
-```bash
-bun install
-cp .env.example .env        # set DATABASE_URL
-bun run db:push             # create SQLite schema
-bun run dev                 # http://localhost:3000
+```powershell
+git clone https://github.com/MbazaCodes/Tanzania-Student-Exams.git
+cd Tanzania-Student-Exams
+
+# Create .env (once)
+@"
+VITE_SUPABASE_URL=https://pdyjpkgjiakvlqqcicjj.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+"@ | Out-File -Encoding UTF8 .env
+
+npm install
+npm run dev
 ```
 
-Demo data is seeded automatically on first load (5 users across 4 roles, a school, sample papers, exams, and a scheduled timetable). Use the **role switcher** in the header to experience each perspective, or click **Reset demo** to reseed.
+Or run the setup script: `.\Setup-ExamHub.ps1`
 
-## Tech Stack
+## Supabase Setup (run once in SQL Editor)
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript 5 |
-| Styling | Tailwind CSS 4 + shadcn/ui |
-| Database | Prisma ORM (SQLite) |
-| State | Zustand |
-| Icons | lucide-react |
-| Toasts | sonner |
+1. `supabase/001_schema.sql` — tables + RLS
+2. `supabase/002_storage.sql` — file storage bucket
+3. `supabase/003_functions.sql` — DB functions + views
+4. `supabase/004_features.sql` — verification, library, admin grant
 
-## Developer
+## Project Structure
 
-David Mbazza — [@MbazaCodes](https://github.com/MbazaCodes)
+```
+Tanzania-Student-Exams/
+├── src/
+│   ├── components/examhub/tabs/   # All tab views
+│   ├── lib/                       # api.ts, types.ts, store.ts, ocr.ts
+│   └── pages/                     # LandingPage, AuthPage, ProfilePage
+├── supabase/                      # SQL migrations (run in order)
+├── public/                        # Images (coat of arms, hero, favicon)
+├── index.html
+├── vite.config.ts
+└── .env                           # NOT committed — create manually
+```
