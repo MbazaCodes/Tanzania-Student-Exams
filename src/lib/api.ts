@@ -92,17 +92,17 @@ export async function getCurrentUser(): Promise<User | null> {
     // Prefer Supabase Auth session
     const authUser = await getAuthUser()
     if (authUser) {
-      const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('id', authUser.id).maybeSingle()
+      const { data } = await supabaseAdmin.from('users').select('*, school:schools(*), verification_status, teaching_levels, subjects_taught').eq('id', authUser.id).maybeSingle()
       if (data) { setSessionUid(data.id); return data as User }
     }
     // Fallback: demo switcher (localStorage uid)
     const uid = getSessionUid()
     if (uid) {
-      const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('id', uid).maybeSingle()
+      const { data } = await supabaseAdmin.from('users').select('*, school:schools(*), verification_status, teaching_levels, subjects_taught').eq('id', uid).maybeSingle()
       if (data) return data as User
     }
     // Last resort: first super_admin row
-    const { data } = await supabaseAdmin.from('users').select('*, school:schools(*)').eq('role', 'super_admin').limit(1).maybeSingle()
+    const { data } = await supabaseAdmin.from('users').select('*, school:schools(*), verification_status, teaching_levels, subjects_taught').eq('role', 'super_admin').limit(1).maybeSingle()
     if (data) { setSessionUid(data.id); return data as User }
     return null
   } catch {

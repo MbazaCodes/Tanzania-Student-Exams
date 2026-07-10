@@ -124,12 +124,21 @@ export default function App() {
   )
 
   const role = user?.role ?? 'student'
+  const isPendingTeacher = role === 'teacher' && user?.verification_status !== 'approved'
   const visibleNav = NAV.filter(n => n.roles.includes(role))
   const activeTab = visibleNav.some(n => n.id === tab) ? tab : 'library'
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Toaster richColors position="top-right"/>
       <div className="flag-bar h-1 w-full"/>
+
+      {/* Pending teacher banner */}
+      {isPendingTeacher && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-3 text-sm text-amber-800">
+          <span className="text-base">⏳</span>
+          <span><strong>Account pending approval.</strong> An admin will review your application. You can browse all content but creating exams requires approval.</span>
+        </div>
+      )}
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-hero text-white shadow-lg">
