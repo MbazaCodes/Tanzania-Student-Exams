@@ -72,23 +72,30 @@ export function UploadPaper({ user }: { user: User }) {
     setFile(f)
     setRawText(''); setParsedQs([]); setShowQs(false); setOcrProgress(null)
     if (f && !title) setTitle(f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '))
+    // Auto-scan the document immediately
+    if (f) { setTimeout(() => runOcrFor(f), 300) }
   }
 
   // ── OCR / extraction ──────────────────────────────────────
-  const runOcr = useCallback(async () => {
-    if (!file) return
+  const runOcrFor = useCallback(async (targetFile: File) => {
+    const fIsPdf = targetFile.type === 'application/pdf' || targetFile.name.toLowerCase().endsWith('.pdf')
+    const fIsImage = targetFile.type.startsWith('image/')
+    if (!fIsPdf && !fIsImage) {
+      toast.info('Word docs can\'t be scanned in-browser. Please upload a PDF or image, or add questions manually.')
+      return
+    }
     setOcrRunning(true)
     setRawText(''); setParsedQs([]); setShowQs(false)
     try {
       let text = ''
       const onP = (p: OcrProgress) => setOcrProgress(p)
 
-      if (isPdf) {
-        const result = await extractPdfText(file, onP)
+      if (fIsPdf) {
+        const result = await extractPdfText(targetFile, onP)
         text = result.text
-        if (result.isScanned) toast.info('Scanned PDF — OCR applied to each page')
-      } else if (isImage) {
-        text = await ocrImage(file, onP)
+        if (result.isScanned) toast.info('Scanned PDF — OCR read each page as an image')
+      } else if (fIsImage) {
+        text = await ocrImage(targetFile, onP)
       }
 
       setRawText(text)
@@ -106,18 +113,23 @@ export function UploadPaper({ user }: { user: User }) {
           enabled: true,
         })))
         setShowQs(true)
-        toast.success(`Found ${qs.length} question${qs.length > 1 ? 's' : ''} — review and add answers below`)
+        toast.success(`✓ Scanned! Found ${qs.length} question${qs.length > 1 ? 's' : ''} — add correct answers below, then create the exam.`)
       } else {
-        toast.info('No questions auto-detected — check the raw text and add questions manually')
+        toast.info('Scanned, but no questions auto-detected. Check the extracted text and add questions manually.')
         setShowRaw(true)
       }
     } catch(e) {
-      toast.error(e instanceof Error ? e.message : 'OCR failed')
+      toast.error(e instanceof Error ? e.message : 'Scan failed — try a clearer file')
     } finally {
       setOcrRunning(false)
       setOcrProgress(null)
     }
-  }, [file, isPdf, isImage])
+  }, [])
+
+  const runOcr = useCallback(async () => {
+    if (!file) return
+    await runOcrFor(file)
+  }, [file, runOcrFor])
 
   const updQ = (id: string, patch: Partial<QDraft>) =>
     setParsedQs(qs => qs.map(q => q.id === id ? { ...q, ...patch } : q))
@@ -374,12 +386,19 @@ export function UploadPaper({ user }: { user: User }) {
                 disabled={!file || (!isPdf && !isImage) || ocrRunning || saving}
                 style={{ background: 'var(--navy)' }}>
                 {ocrRunning
-                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/>{ocrProgress?.message ?? 'Processing…'}</>
-                  : <><Scan className="mr-2 h-4 w-4"/>Extract & Parse Questions</>}
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/>{ocrProgress?.message ?? 'Scanning…'}</>
+                  : parsedQs.length > 0
+                    ? <><Scan className="mr-2 h-4 w-4"/>Re-scan Document</>
+                    : <><Scan className="mr-2 h-4 w-4"/>Scan Document for Questions</>}
               </Button>
+              {file && (isPdf || isImage) && parsedQs.length === 0 && !ocrRunning && (
+                <p className="text-xs text-green-600 flex items-center gap-1">
+                  <Wand2 className="h-3.5 w-3.5"/> Scanning starts automatically when you pick a file.
+                </p>
+              )}
               {file && !isPdf && !isImage && (
                 <p className="text-xs text-amber-600 flex items-center gap-1">
-                  <AlertCircle className="h-3.5 w-3.5"/> OCR supports PDF and images only. DOCX stored as-is.
+                  <AlertCircle className="h-3.5 w-3.5"/> Word docs (.docx) can't be scanned in-browser. Convert to PDF first, or add questions manually in Create Exam.
                 </p>
               )}
             </CardContent>
