@@ -117,6 +117,7 @@ function ExamDetailDialog({ exam, onClose }: { exam: Exam | null; onClose: () =>
                             <span className="font-bold text-primary shrink-0">Q{i+1}.</span>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium">{q.text}</p>
+                              {q.image_url && <img src={q.image_url} alt="" className="max-h-40 rounded border mt-2 object-contain"/>}
                               <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
                                 <Badge variant="secondary" className="text-xs capitalize">{q.type.replace('_',' ')}</Badge>
                                 <span>{q.marks} mark{q.marks>1?'s':''}</span>

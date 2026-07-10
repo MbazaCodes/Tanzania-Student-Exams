@@ -518,6 +518,11 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function QuestionInput({ q, value, onChange }: { q: Question; value: string; onChange: (v: string) => void }) {
+  // Render image if present
+  const imageEl = q.image_url ? (
+    <img src={q.image_url} alt="Question" className="max-h-72 rounded-lg border border-border object-contain mb-3"/>
+  ) : null
+
   // Render formula if present
   const formulaEl = q.formula ? (
     <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 mb-3">
@@ -542,7 +547,7 @@ function QuestionInput({ q, value, onChange }: { q: Question; value: string; onC
     else opts = ["true", "false"]
     return (
       <div>
-        {formulaEl}{tableEl}{graphEl}
+        {imageEl}{formulaEl}{tableEl}{graphEl}
         <RadioGroup value={value} onValueChange={onChange} className={q.type === "truefalse" ? "flex gap-4" : "gap-2"}>
           {opts.map((o, i) => {
             const val = q.type === "mcq" ? String(i) : o
@@ -564,7 +569,7 @@ function QuestionInput({ q, value, onChange }: { q: Question; value: string; onC
   if (q.type === "formula" || q.type === "table" || q.type === "graph" || q.type === "short") {
     return (
       <div>
-        {formulaEl}{tableEl}{graphEl}
+        {imageEl}{formulaEl}{tableEl}{graphEl}
         <Input value={value} onChange={e => onChange(e.target.value)} placeholder="Type your answer…"
           className="max-w-sm" onKeyDown={e => { if (e.key === "Enter") e.preventDefault() }}/>
       </div>
@@ -573,7 +578,7 @@ function QuestionInput({ q, value, onChange }: { q: Question; value: string; onC
   // essay
   return (
     <div>
-      {formulaEl}{tableEl}{graphEl}
+      {imageEl}{formulaEl}{tableEl}{graphEl}
       <Textarea value={value} onChange={e => onChange(e.target.value)} rows={5} placeholder="Write your essay answer here…"/>
     </div>
   )

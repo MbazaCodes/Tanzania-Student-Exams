@@ -2,13 +2,13 @@ import { useEffect, useState, useRef } from 'react'
 import {
   FilePlus2, Plus, Trash2, GripVertical, Loader2, Save, Send,
   ChevronUp, ChevronDown, Link2, Timer, Wifi, TableIcon, BarChart3,
-  Sigma, Eye, EyeOff, AlertCircle,
+  Sigma, Eye, EyeOff, AlertCircle, ImageIcon, X,
 } from 'lucide-react'
 import {
   Button, Input, Label, Textarea, Card, CardContent, CardHeader, CardTitle,
   Badge, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Separator,
 } from '@/components/ui/index'
-import { listPapers, createExam } from '@/lib/api'
+import { listPapers, createExam, uploadQuestionImage } from '@/lib/api'
 import {
   LEVELS, SUBJECTS, QUESTION_TYPES, EXAM_TYPES, FORMULA_TEMPLATES,
   type QuestionType, type User, type Paper, type QuestionTableData, type QuestionGraphData,
@@ -24,6 +24,7 @@ interface QDraft {
   options: string[]; correct_answer: string; marks: number
   difficulty: string; explanation: string; time_limit_secs: string
   formula: string
+  image_url: string
   table_data: QuestionTableData
   graph_data: QuestionGraphData
 }
@@ -32,7 +33,7 @@ let qid = 0
 const newQ = (): QDraft => ({
   id: `q-${++qid}`, type: 'mcq', text: '', options: ['', '', '', ''],
   correct_answer: '', marks: 1, difficulty: 'medium', explanation: '',
-  time_limit_secs: '', formula: '',
+  time_limit_secs: '', formula: '', image_url: '',
   table_data: { headers: ['Column 1', 'Column 2'], rows: [['', '']] },
   graph_data: { type: 'bar', title: '', labels: ['A', 'B', 'C'], datasets: [{ label: 'Series 1', data: [0, 0, 0] }] },
 })
@@ -104,6 +105,7 @@ export function CreateExam({ user }: { user: User }) {
         explanation: q.explanation.trim() || undefined,
         time_limit_secs: q.time_limit_secs ? Number(q.time_limit_secs) : undefined,
         formula: q.formula.trim() || undefined,
+        image_url: q.image_url.trim() || undefined,
         table_data: ['table'].includes(q.type) ? JSON.stringify(q.table_data) : undefined,
         graph_data: ['graph'].includes(q.type) ? JSON.stringify(q.graph_data) : undefined,
       }))
@@ -278,6 +280,9 @@ function QuestionEditor({ index, total, q, examPerQTimer, formulaTemplates, onCh
         {/* Question text */}
         <Textarea value={q.text} onChange={e => onChange({ text: e.target.value })} rows={2}
           placeholder={isMath ? "Question text (e.g. 'Solve for x:')" : isTable ? "Describe the table (e.g. 'Use the table to answer:')" : isGraph ? "Describe the graph (e.g. 'Study the chart and answer:')" : "Question text…"}/>
+
+        {/* ─── IMAGE upload ─── */}
+        <QuestionImageUpload imageUrl={q.image_url} onChange={url => onChange({ image_url: url })}/>
 
         {/* ─── FORMULA section ─── */}
         {isMath && (
@@ -478,6 +483,52 @@ function GraphEditor({ data, onChange }: { data: QuestionGraphData; onChange: (d
           <button onClick={() => onChange({...data,datasets:[...data.datasets,{label:`Series ${data.datasets.length+1}`,data:data.labels.map(()=>0),color:COLORS[data.datasets.length%COLORS.length]}]})} className="text-xs text-green-600 hover:text-green-800 flex items-center gap-1"><Plus className="h-3 w-3"/>Dataset</button>
         </div>
       </div>
+    </div>
+  )
+}
+
+
+// ── Question Image Upload ────────────────────────────────────
+function QuestionImageUpload({ imageUrl, onChange }: {
+  imageUrl: string; onChange: (url: string) => void
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFile = async (file: File | null) => {
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
+    setUploading(true)
+    try {
+      const url = await uploadQuestionImage(file)
+      onChange(url)
+      toast.success('Image uploaded')
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Upload failed') }
+    finally { setUploading(false) }
+  }
+
+  if (imageUrl) {
+    return (
+      <div className="relative w-fit">
+        <img src={imageUrl} alt="Question" className="max-h-48 rounded-lg border border-border object-contain"/>
+        <button onClick={() => onChange('')}
+          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 shadow-sm">
+          <X className="h-3.5 w-3.5"/>
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <button onClick={() => fileRef.current?.click()} disabled={uploading}
+        className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50">
+        {uploading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ImageIcon className="h-4 w-4"/>}
+        {uploading ? 'Uploading…' : 'Add image to question (optional)'}
+      </button>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden"
+        onChange={e => handleFile(e.target.files?.[0] ?? null)}/>
     </div>
   )
 }

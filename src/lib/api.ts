@@ -1025,3 +1025,15 @@ export async function rateTeacher(body: { teacher_id: string; session_id?: strin
     .upsert({ ...body, student_id: uid }, { onConflict: 'teacher_id,student_id,session_id' })
   if (error) throw new Error(error.message)
 }
+
+// Upload an image for an exam question → returns public URL
+export async function uploadQuestionImage(file: File): Promise<string> {
+  const ext = file.name.split('.').pop()
+  const path = `questions/${getSessionUid()}/${Date.now()}.${ext}`
+  const { error } = await supabaseAdmin.storage
+    .from('forum-attachments')
+    .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type })
+  if (error) throw new Error(error.message)
+  const { data } = supabaseAdmin.storage.from('forum-attachments').getPublicUrl(path)
+  return data.publicUrl
+}
