@@ -1,5 +1,7 @@
-"use client";
+
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { listSchedule, createSchedule, updateSchedule, deleteSchedule } from '@/lib/api'
+import { useStore } from '@/lib/store'
 import {
   CalendarClock,
   Plus,
@@ -18,12 +20,12 @@ import {
   Inbox,
   History,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/index";
+import { Input } from "@/components/ui/index";
+import { Label } from "@/components/ui/index";
+import { Textarea } from "@/components/ui/index";
+import { Badge } from "@/components/ui/index";
+import { Card, CardContent } from "@/components/ui/index";
 import {
   Dialog,
   DialogContent,
@@ -31,14 +33,14 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from "@/components/ui/index";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/index";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,8 +51,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { api } from "@/lib/api-client";
+} from "@/components/ui/index";
 import {
   LEVELS,
   SUBJECTS,
@@ -60,7 +61,6 @@ import {
   type ScheduleType,
   type User,
 } from "@/lib/types";
-import { useExamHub } from "../store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -82,14 +82,14 @@ export function ScheduleTab({ user }: { user: User }) {
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [createOpen, setCreateOpen] = useState(false);
-  const { nonce, setTab } = useExamHub();
+  const { nonce, setTab } = useStore();
   const manager = canManage(user.role);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await api.listSchedule({ scope: "all" });
-      setItems(r.items);
+      const r = await listSchedule();
+      setItems(r);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load schedule");
     } finally {
@@ -108,8 +108,8 @@ export function ScheduleTab({ user }: { user: User }) {
   }, []);
 
   const computeStatus = (item: ScheduleItem, ts: number) => {
-    const start = new Date(item.scheduledAt).getTime();
-    const end = start + item.durationMins * 60_000;
+    const start = new Date(item.scheduled_at).getTime();
+    const end = start + item.duration_mins * 60_000;
     if (item.status === "cancelled") return "cancelled";
     if (item.status === "completed" || ts > end) return "completed";
     if (ts >= start && ts < end) return "live";
@@ -123,7 +123,7 @@ export function ScheduleTab({ user }: { user: User }) {
     () =>
       items
         .map((it) => ({ ...it, _live: computeStatus(it, now) }))
-        .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()),
+        .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()),
     [items, now]
   );
 
@@ -138,7 +138,7 @@ export function ScheduleTab({ user }: { user: User }) {
 
   const act = async (item: ScheduleItem, status: "live" | "completed" | "cancelled") => {
     try {
-      await api.updateSchedule(item.id, { status });
+      await updateSchedule(item.id, { status } as any);
       toast.success(
         status === "live" ? "Marked as live now" : status === "completed" ? "Marked complete" : "Cancelled"
       );
@@ -149,7 +149,7 @@ export function ScheduleTab({ user }: { user: User }) {
   };
   const del = async (item: ScheduleItem) => {
     try {
-      await api.deleteSchedule(item.id);
+      await deleteSchedule(item.id);
       toast.success("Schedule item deleted");
       load();
     } catch (e) {
@@ -241,8 +241,8 @@ export function ScheduleTab({ user }: { user: User }) {
 
 /* ===== Live countdown card ===== */
 function CountdownCard({ item, now, onTakeExam }: { item: ScheduleItem & { _live: string }; now: number; onTakeExam: () => void }) {
-  const start = new Date(item.scheduledAt).getTime();
-  const end = start + item.durationMins * 60_000;
+  const start = new Date(item.scheduled_at).getTime();
+  const end = start + item.duration_mins * 60_000;
   const Style = TYPE_STYLE[item.type];
   const Icon = Style.icon;
   const isLive = item._live === "live";
@@ -274,7 +274,7 @@ function CountdownCard({ item, now, onTakeExam }: { item: ScheduleItem & { _live
               {isLive && <Badge className="bg-red-500 text-white animate-pulse"><span className="h-1.5 w-1.5 rounded-full bg-white mr-1" /> LIVE NOW</Badge>}
             </div>
             <h3 className="mt-1.5 text-lg font-semibold truncate">{item.title}</h3>
-            <p className="text-sm opacity-80">{item.subject} · {new Date(item.scheduledAt).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+            <p className="text-sm opacity-80">{item.subject} · {new Date(item.scheduled_at).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -289,7 +289,7 @@ function CountdownCard({ item, now, onTakeExam }: { item: ScheduleItem & { _live
           </div>
           {isLive && (
             <Button onClick={onTakeExam} className={cn("shrink-0", isLive ? "bg-navy text-white hover:bg-navy/90" : "")}>
-              <Play className="mr-1.5 h-4 w-4" /> {item.examId ? "Take now" : "Join"}
+              <Play className="mr-1.5 h-4 w-4" /> {item.exam_id ? "Take now" : "Join"}
             </Button>
           )}
         </div>
@@ -300,7 +300,7 @@ function CountdownCard({ item, now, onTakeExam }: { item: ScheduleItem & { _live
 
 /* ===== Alert row (live / starting soon) ===== */
 function AlertRow({ item, now }: { item: ScheduleItem & { _live: string }; now: number }) {
-  const start = new Date(item.scheduledAt).getTime();
+  const start = new Date(item.scheduled_at).getTime();
   const mins = Math.round((start - now) / 60_000);
   const isLive = item._live === "live";
   return (
@@ -336,9 +336,9 @@ function ScheduleRow({
 }) {
   const Style = TYPE_STYLE[item.type];
   const Icon = Style.icon;
-  const start = new Date(item.scheduledAt).getTime();
-  const end = start + item.durationMins * 60_000;
-  const dateStr = new Date(item.scheduledAt).toLocaleString([], {
+  const start = new Date(item.scheduled_at).getTime();
+  const end = start + item.duration_mins * 60_000;
+  const dateStr = new Date(item.scheduled_at).toLocaleString([], {
     weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
   });
 
@@ -367,13 +367,13 @@ function ScheduleRow({
             <span className="font-medium text-foreground">{item.subject}</span>
             {item.level && <span>· {levelLabel(item.level)}</span>}
             <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {dateStr}</span>
-            <span>· {item.durationMins < 1440 ? `${item.durationMins} min` : `${Math.round(item.durationMins / 1440 * 10) / 10} days`}</span>
-            {item.examId && <span className="text-green font-medium">· linked exam</span>}
+            <span>· {item.duration_mins < 1440 ? `${item.duration_mins} min` : `${Math.round(item.duration_mins / 1440 * 10) / 10} days`}</span>
+            {item.exam_id && <span className="text-green font-medium">· linked exam</span>}
           </div>
           {item.description && <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{item.description}</p>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {item._live === "live" && item.examId && (
+          {item._live === "live" && item.exam_id && (
             <Button size="sm" onClick={onTakeExam}><Play className="mr-1 h-3.5 w-3.5" /> Take</Button>
           )}
           {manager && item._live !== "completed" && item._live !== "cancelled" && (
@@ -440,7 +440,7 @@ function CreateScheduleDialog({ onClose, onCreated }: { onClose: () => void; onC
     }
     setSaving(true);
     try {
-      await api.createSchedule({
+      await createSchedule({
         title, type, subject,
         level: level || undefined,
         scheduledAt: scheduledAt.toISOString(),
