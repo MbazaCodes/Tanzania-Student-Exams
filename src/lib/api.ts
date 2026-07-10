@@ -374,12 +374,18 @@ export async function deleteQuestion(id: string, examId: string) {
 export async function listSubmissions(params: Record<string, string> = {}): Promise<Submission[]> {
   let q = supabaseAdmin
     .from('submissions')
-    .select('*, student:users!submissions_student_id_fkey(id,name,email), exam:exams(id,title,subject,level,total_marks,exam_type), answers(*, question:questions(*))')
+    .select('*, student:users!submissions_student_id_fkey(id,name,email), exam:exams(id,title,subject,level,total_marks,exam_type,created_by_id), answers(*, question:questions(*))')
     .order('submitted_at', { ascending: false })
   if (params.exam_id) q = q.eq('exam_id', params.exam_id)
   if (params.student_id) q = q.eq('student_id', params.student_id)
-  if (params.status) q = q.eq('status', params.status)
+  // 'all' (or any unrecognised sentinel) means "do not filter by status"
+  if (params.status && params.status !== 'all') q = q.eq('status', params.status)
   if (params.mine === '1') { const uid = getSessionUid(); if (uid) q = q.eq('student_id', uid) }
+  // taught_by='1' → only submissions for exams created by the current user (teacher review scope)
+  if (params.taught_by === '1') {
+    const uid = getSessionUid()
+    if (uid) q = q.eq('exam.created_by_id', uid)
+  }
   const { data, error } = await q
   if (error) throw new Error(error.message)
   return (data ?? []) as Submission[]
@@ -633,8 +639,9 @@ export async function listLibraryResources(params: Record<string, string> = {}):
   if (params.type) q = q.eq('type', params.type)
   if (params.subject) q = q.eq('subject', params.subject)
   if (params.level) q = q.eq('level', params.level)
-  if (params.status) q = q.eq('status', params.status)
-  else q = q.eq('status', 'published')
+  // 'all' (used by contributors to see their own drafts) skips the default published-only filter
+  if (params.status && params.status !== 'all') q = q.eq('status', params.status)
+  else if (!params.status) q = q.eq('status', 'published')
   const { data, error } = await q
   if (error) throw new Error(error.message)
   return (data ?? []) as LibraryResource[]
@@ -889,8 +896,9 @@ export async function listOnlineSessions(params: Record<string, string> = {}): P
   if (params.teacher_id) q = q.eq('teacher_id', params.teacher_id)
   if (params.subject) q = q.eq('subject', params.subject)
   if (params.level) q = q.eq('level', params.level)
-  if (params.status) q = q.eq('status', params.status)
-  else q = q.in('status', ['scheduled', 'live'])
+  // 'all' (used by MyOnlineSessions to include 'ended' sessions) skips the default active-only filter
+  if (params.status && params.status !== 'all') q = q.eq('status', params.status)
+  else if (!params.status) q = q.in('status', ['scheduled', 'live'])
   const { data, error } = await q
   if (error) throw new Error(error.message)
 

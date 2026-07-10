@@ -55,7 +55,9 @@ export function CreateExam({ user }: { user: User }) {
   const [papers, setPapers] = useState<Paper[]>([])
   const [questions, setQuestions] = useState<QDraft[]>([newQ()])
   const [saving, setSaving] = useState(false)
-  const isIndependent = user.role === 'teacher'
+  // A teacher is "independent" only when they have NO school linked.
+  // School-linked teachers must keep their school_id on created exams.
+  const isIndependent = user.role === 'teacher' && !user.school_id
 
   useEffect(() => {
     const pid = sessionStorage.getItem('examhub:prefillPaperId')
