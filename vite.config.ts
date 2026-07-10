@@ -14,8 +14,11 @@ export default defineConfig({
     historyApiFallback: true,
     port: 5173,
   },
+  worker: {
+    format: 'es',
+  },
   optimizeDeps: {
-    include: ['katex'],
+    include: ['katex', 'pdfjs-dist', 'tesseract.js'],
     exclude: [],
   },
 })
