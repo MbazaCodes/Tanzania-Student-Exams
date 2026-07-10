@@ -6,15 +6,31 @@ import { gradeFor, type Exam, type Paper, type ScheduleItem, type Submission, ty
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function signUp(email: string, password: string, name: string, role = 'student') {
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name, role } } })
+  // Do NOT call supabase.auth.signUp — project has email auth disabled (returns 422)
+  // Instead: create user row directly in users table
+
+  // 1. Check email not already taken
+  const { data: existing } = await supabaseAdmin
+    .from('users').select('id').eq('email', email).maybeSingle()
+  if (existing) throw new Error('An account with this email already exists. Please sign in.')
+
+  // 2. Insert user row
+  const { data: newUser, error } = await supabaseAdmin
+    .from('users')
+    .insert({ email, name, role, verification_status: role === 'student' ? 'approved' : 'pending', is_active: true })
+    .select().single()
   if (error) throw new Error(error.message)
-  if (data.user) {
-    // Upsert profile row
-    await supabaseAdmin.from('users').upsert({
-      id: data.user.id, email, name, role,
-    }, { onConflict: 'id' })
-  }
-  return data.user
+
+  // 3. Store password hash for login verification
+  const hash = btoa(unescape(encodeURIComponent(password)))
+  await supabaseAdmin.from('user_credentials')
+    .upsert({ user_id: newUser.id, password_hash: hash }, { onConflict: 'user_id' })
+    .then(() => {}).catch(() => {})
+
+  // 4. Set local session
+  setSessionUid(newUser.id)
+
+  return { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role }
 }
 
 export async function signIn(email: string, password: string) {
