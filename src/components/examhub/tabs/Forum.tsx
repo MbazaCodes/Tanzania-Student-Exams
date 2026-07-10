@@ -79,14 +79,42 @@ export function Forum({ user }: { user: User }) {
   const [activeTopic, setActiveTopic]     = useState<ForumTopic | null>(null)
   const [loading, setLoading]       = useState(true)
 
+  const isTeacher   = user.role === 'teacher'
+  const isSuperAdmin = user.role === 'super_admin'
+
+  // Parse teacher's approved levels and subjects
+  const teacherLevels: string[] = isTeacher && user.teaching_levels
+    ? (() => { try { return JSON.parse(user.teaching_levels!) } catch { return [] } })()
+    : []
+  const teacherSubjects: string[] = isTeacher && user.subjects_taught
+    ? (() => { try { return JSON.parse(user.subjects_taught!) } catch { return [] } })()
+    : []
+
+  // Map label → value (e.g. "Form 4 (CSEE)" → "form_4")
+  const LEVEL_MAP: Record<string,string> = {
+    'Standard 4': 'standard_4', 'Standard 7 (PSLE)': 'standard_7',
+    'Form 2 (FTNA)': 'form_2', 'Form 4 (CSEE)': 'form_4', 'Form 6 (ACSEE)': 'form_6',
+  }
+  const teacherLevelValues = teacherLevels.map(l => LEVEL_MAP[l] ?? l.toLowerCase().replace(' ','_'))
+
   const loadChannels = useCallback(async () => {
     setLoading(true)
     try {
       const data = await listForumChannels(levelFilter !== 'all' ? levelFilter : undefined)
-      setChannels(data)
+      // Teachers: filter to only their levels + subjects (+ General always)
+      const filtered = isTeacher && !isSuperAdmin
+        ? data.filter(ch =>
+            ch.level === 'general' ||
+            (
+              (teacherLevelValues.length === 0 || teacherLevelValues.includes(ch.level)) &&
+              (teacherSubjects.length === 0 || teacherSubjects.includes(ch.subject))
+            )
+          )
+        : data
+      setChannels(filtered)
     } catch(e) { toast.error(e instanceof Error ? e.message : 'Failed') }
     finally { setLoading(false) }
-  }, [levelFilter])
+  }, [levelFilter, isTeacher, isSuperAdmin, teacherLevelValues.join(), teacherSubjects.join()])
 
   useEffect(() => { loadChannels() }, [loadChannels])
 
@@ -119,7 +147,13 @@ export function Forum({ user }: { user: User }) {
               <MessageSquare className="h-6 w-6 text-primary"/>
               {view === 'channels' ? 'Discussion Forums' : view === 'topics' ? activeChannel?.subject : activeTopic?.title}
             </h1>
-            {view === 'channels' && <p className="text-sm text-muted-foreground mt-0.5">Join subject discussions, ask questions, share resources.</p>}
+            {view === 'channels' && (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {isTeacher && !isSuperAdmin && teacherLevelValues.length > 0
+                ? `Showing your subjects: ${teacherSubjects.slice(0,3).join(', ')}${teacherSubjects.length > 3 ? '…' : ''}`
+                : 'Join subject discussions, ask questions, share resources.'}
+            </p>
+          )}
             {view === 'topics' && activeChannel && (
               <p className="text-sm text-muted-foreground mt-0.5">
                 <Badge variant="outline" className={cn('text-xs mr-2', LEVEL_COLORS[activeChannel.level])}>{levelLabel(activeChannel.level)}</Badge>

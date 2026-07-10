@@ -30,7 +30,7 @@ interface NavItem { id: TabId; label: string; icon: React.ComponentType<{ classN
 
 const NAV: NavItem[] = [
   { id: 'library',     label: 'Papers Library',     icon: Library,       roles: ['student','teacher','super_admin'] },
-  { id: 'schedule',    label: 'Schedule & Alerts',  icon: CalendarClock, roles: ['student','teacher','super_admin'] },
+  { id: 'schedule',    label: 'Schedule & Timetable',  icon: CalendarClock, roles: ['student','teacher','super_admin'] },
   { id: 'take-exam',   label: 'Take Exam / Quiz',   icon: PenSquare,     roles: ['student'] },
   { id: 'results',     label: 'My Results',         icon: BarChart3,     roles: ['student'] },
   { id: 'upload',      label: 'Upload Paper',       icon: Upload,        roles: ['teacher','super_admin'] },
@@ -39,8 +39,8 @@ const NAV: NavItem[] = [
   { id: 'review',      label: 'Review Submissions', icon: CheckCircle2,  roles: ['teacher','super_admin'] },
   { id: 'admin',       label: 'Admin Overview',     icon: ShieldCheck,   roles: ['super_admin'] },
   { id: 'verifications',label: 'Verifications',       icon: ShieldCheck,   roles: ['super_admin'] },
-  { id: 'book-library', label: 'Book Library',        icon: Library,       roles: ['student','teacher','super_admin'] },
-  { id: 'forum',        label: 'Forums',              icon: MessageSquare, roles: ['student','teacher','super_admin'] },
+  { id: 'book-library', label: 'Book Library & Resources',        icon: Library,       roles: ['student','teacher','super_admin'] },
+  { id: 'forum',        label: 'Discussion Forums',              icon: MessageSquare, roles: ['student','teacher','super_admin'] },
   { id: 'sessions',     label: 'Live Sessions',       icon: Video,         roles: ['student','teacher','super_admin'] },
   { id: 'my-sessions',  label: 'My Sessions',         icon: Video,         roles: ['teacher','super_admin'] },
 ]

@@ -374,7 +374,7 @@ export async function deleteQuestion(id: string, examId: string) {
 export async function listSubmissions(params: Record<string, string> = {}): Promise<Submission[]> {
   let q = supabaseAdmin
     .from('submissions')
-    .select('*, student:users(id,name,email), exam:exams(id,title,subject,level,total_marks,exam_type), answers(*, question:questions(*))')
+    .select('*, student:users!submissions_student_id_fkey(id,name,email), exam:exams(id,title,subject,level,total_marks,exam_type), answers(*, question:questions(*))')
     .order('submitted_at', { ascending: false })
   if (params.exam_id) q = q.eq('exam_id', params.exam_id)
   if (params.student_id) q = q.eq('student_id', params.student_id)
@@ -388,7 +388,7 @@ export async function listSubmissions(params: Record<string, string> = {}): Prom
 export async function getSubmission(id: string): Promise<Submission> {
   const { data, error } = await supabaseAdmin
     .from('submissions')
-    .select('*, student:users(*), exam:exams(*, questions(*)), answers(*, question:questions(*))')
+    .select('*, student:users!submissions_student_id_fkey(*), exam:exams(*, questions(*)), answers(*, question:questions(*))')
     .eq('id', id)
     .single()
   if (error) throw new Error(error.message)
@@ -939,7 +939,7 @@ export async function enrollInSession(sessionId: string): Promise<void> {
 
 export async function listSessionEnrollments(sessionId: string) {
   const { data, error } = await supabaseAdmin.from('session_enrollments')
-    .select('*, student:users(id,name,role,avatar_url)')
+    .select('*, student:users!session_enrollments_student_id_fkey(id,name,role,avatar_url)')
     .eq('session_id', sessionId)
   if (error) throw new Error(error.message)
   return data ?? []
