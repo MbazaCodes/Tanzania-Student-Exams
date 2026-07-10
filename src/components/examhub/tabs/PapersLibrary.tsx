@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { Library, Upload, Search, FileText, Trash2, Archive, Send, RotateCcw, FilePlus2, Loader2, Inbox } from 'lucide-react'
-import { Button, Input, Badge, Card, CardContent, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/index'
+import { Library, Upload, Search, FileText, Trash2, Archive, Send, RotateCcw, FilePlus2, Loader2, Inbox, Eye } from 'lucide-react'
+import { Button, Input, Badge, Card, CardContent, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/index'
 import { listPapers, updatePaper, deletePaper } from '@/lib/api'
 import { LEVELS, SUBJECTS, PAPER_TYPES, levelLabel, type Paper, type User } from '@/lib/types'
 import { useStore } from '@/lib/store'
@@ -18,6 +18,7 @@ export function PapersLibrary({ user }: { user: User }) {
   const [subject, setSubject] = useState('all'); const [level, setLevel] = useState('all')
   const { setTab, nonce } = useStore()
   const manager = canManage(user.role)
+  const [detail, setDetail] = useState<Paper | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -73,22 +74,25 @@ export function PapersLibrary({ user }: { user: User }) {
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {papers.map(p=>(
-            <Card key={p.id} className="overflow-hidden flex flex-col">
+            <Card key={p.id} className="overflow-hidden flex flex-col hover:border-primary/40 hover:shadow-md transition-all">
               <CardContent className="p-4 flex-1 flex flex-col gap-3">
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 cursor-pointer" onClick={()=>setDetail(p)}>
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><FileText className="h-5 w-5"/></div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2"><Badge variant="outline" className={STATUS_STYLE[p.status]}>{p.status}</Badge><Badge variant="secondary" className="capitalize">{p.type}</Badge></div>
-                    <h3 className="mt-1.5 font-semibold leading-snug line-clamp-2">{p.title}</h3>
+                    <h3 className="mt-1.5 font-semibold leading-snug line-clamp-2 hover:text-primary">{p.title}</h3>
                   </div>
                 </div>
-                <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground cursor-pointer" onClick={()=>setDetail(p)}>
                   <div><dt className="inline">Subject:</dt> <dd className="inline font-medium text-foreground">{p.subject}</dd></div>
                   <div><dt className="inline">Level:</dt> <dd className="inline font-medium text-foreground">{levelLabel(p.level)}</dd></div>
                   <div><dt className="inline">Year:</dt> <dd className="inline font-medium text-foreground">{p.year}</dd></div>
                   <div><dt className="inline">Size:</dt> <dd className="inline font-medium text-foreground">{fmtSize(p.file_size)}</dd></div>
                 </dl>
                 {p.description&&<p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>}
+                <button onClick={()=>setDetail(p)} className="text-xs font-medium text-primary hover:underline text-left flex items-center gap-1">
+                  <Eye className="h-3.5 w-3.5"/> View details
+                </button>
                 <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
                   {manager ? (<>
                     {p.status!=='published'&&<Button size="sm" onClick={()=>act(p,'publish')}><Send className="mr-1 h-3.5 w-3.5"/>Publish</Button>}
@@ -105,6 +109,65 @@ export function PapersLibrary({ user }: { user: User }) {
           ))}
         </div>
       )}
+
+      {/* Paper detail dialog */}
+      <Dialog open={!!detail} onOpenChange={o=>{if(!o)setDetail(null)}}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {detail && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary"/>{detail.title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className={STATUS_STYLE[detail.status]}>{detail.status}</Badge>
+                  <Badge variant="secondary" className="capitalize">{detail.type}</Badge>
+                  <Badge variant="outline">{detail.subject}</Badge>
+                  <Badge variant="outline">{levelLabel(detail.level)}</Badge>
+                </div>
+                <dl className="grid grid-cols-2 gap-3 text-sm">
+                  <div><dt className="text-muted-foreground text-xs">Subject</dt><dd className="font-medium">{detail.subject}</dd></div>
+                  <div><dt className="text-muted-foreground text-xs">Level</dt><dd className="font-medium">{levelLabel(detail.level)}</dd></div>
+                  <div><dt className="text-muted-foreground text-xs">Year</dt><dd className="font-medium">{detail.year}</dd></div>
+                  <div><dt className="text-muted-foreground text-xs">File size</dt><dd className="font-medium">{fmtSize(detail.file_size)}</dd></div>
+                  <div><dt className="text-muted-foreground text-xs">Uploaded by</dt><dd className="font-medium">{detail.uploaded_by?.name ?? '—'}</dd></div>
+                  <div><dt className="text-muted-foreground text-xs">Date</dt><dd className="font-medium">{new Date(detail.created_at).toLocaleDateString()}</dd></div>
+                </dl>
+                {detail.description && (
+                  <div><p className="text-xs text-muted-foreground mb-1">Description</p><p className="text-sm">{detail.description}</p></div>
+                )}
+                {/* PDF/File preview */}
+                {detail.file_url && (
+                  <div className="rounded-lg border overflow-hidden">
+                    {detail.file_name?.toLowerCase().endsWith('.pdf') ? (
+                      <iframe src={detail.file_url} className="w-full h-96" title="Paper preview"/>
+                    ) : (
+                      <img src={detail.file_url} alt={detail.title} className="w-full max-h-96 object-contain"/>
+                    )}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  {detail.file_url && (
+                    <a href={detail.file_url} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm"><Eye className="mr-1 h-3.5 w-3.5"/>Open File</Button>
+                    </a>
+                  )}
+                  {manager && !detail.exam && (
+                    <Button size="sm" variant="secondary" onClick={()=>{sessionStorage.setItem('examhub:prefillPaperId',detail.id);setTab('create-exam')}}>
+                      <FilePlus2 className="mr-1 h-3.5 w-3.5"/>Build Exam from this
+                    </Button>
+                  )}
+                  {manager && detail.status!=='published' && (
+                    <Button size="sm" onClick={()=>{act(detail,'publish');setDetail(null)}}><Send className="mr-1 h-3.5 w-3.5"/>Publish</Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
