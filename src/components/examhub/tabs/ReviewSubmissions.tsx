@@ -9,12 +9,22 @@ import { cn } from '@/lib/utils'
 
 const STATUS_STYLE: Record<string,string> = { submitted:'bg-zinc-100 text-zinc-600', auto_marked:'bg-sky-100 text-sky-700', reviewed:'bg-amber-100 text-amber-700', published:'bg-emerald-100 text-emerald-700' }
 
-export function ReviewSubmissions({ user: _user }: { user: User }) {
+export function ReviewSubmissions({ user }: { user: User }) {
   const [subs, setSubs] = useState<Submission[]>([]); const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all'); const [active, setActive] = useState<Submission|null>(null)
   const { nonce } = useStore()
 
-  const load = useCallback(async () => { setLoading(true); try { setSubs(await listSubmissions({})) } catch(e) { toast.error(e instanceof Error?e.message:'Failed') } finally { setLoading(false) } }, [nonce])
+  // Teachers only see submissions for exams they created.
+  // Super_admins see all submissions (oversight).
+  const reviewScope: Record<string, string> =
+    user.role === 'super_admin' ? {} : { taught_by: '1' }
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try { setSubs(await listSubmissions(reviewScope)) }
+    catch(e) { toast.error(e instanceof Error?e.message:'Failed') }
+    finally { setLoading(false) }
+  }, [nonce, user.role])
   useEffect(() => { load() }, [load])
 
   const filtered = subs.filter(s => filter==='all'?true:filter==='pending'?(s.status==='auto_marked'||s.status==='submitted'):s.status===filter)
