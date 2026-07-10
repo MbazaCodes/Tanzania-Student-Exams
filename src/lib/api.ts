@@ -88,27 +88,32 @@ export function setSessionUid(id: string) { localStorage.setItem(SESSION_KEY, id
 export function clearSessionUid() { localStorage.removeItem(SESSION_KEY) }
 
 export async function getCurrentUser(): Promise<User | null> {
+  // Prefer Supabase Auth session
   try {
-    // Prefer Supabase Auth session
     const authUser = await getAuthUser()
     if (authUser) {
       const { data } = await supabaseAdmin.from('users').select('*, school:schools(*), verification_status, teaching_levels, subjects_taught').eq('id', authUser.id).maybeSingle()
       if (data) { setSessionUid(data.id); return data as User }
     }
-    // Fallback: demo switcher (localStorage uid)
-    const uid = getSessionUid()
-    if (uid) {
-      const { data } = await supabaseAdmin.from('users').select('*, school:schools(*), verification_status, teaching_levels, subjects_taught').eq('id', uid).maybeSingle()
+  } catch { /* auth optional */ }
+
+  // Fallback: localStorage uid session
+  const uid = getSessionUid()
+  if (uid) {
+    try {
+      const { data, error } = await supabaseAdmin.from('users').select('*, school:schools(*), verification_status, teaching_levels, subjects_taught').eq('id', uid).maybeSingle()
+      if (error) throw error
       if (data) return data as User
+    } catch (e) {
+      // Distinguish DB-missing from just no-row
+      const msg = e instanceof Error ? e.message : String(e)
+      if (msg.includes('does not exist') || msg.includes('relation') || msg.includes('schema cache')) {
+        throw new Error('DB_NOT_SETUP')
+      }
     }
-    // Last resort: first super_admin row
-    const { data } = await supabaseAdmin.from('users').select('*, school:schools(*), verification_status, teaching_levels, subjects_taught').eq('role', 'super_admin').limit(1).maybeSingle()
-    if (data) { setSessionUid(data.id); return data as User }
-    return null
-  } catch {
-    // Table doesn't exist yet — SQL migrations not run
-    return null
   }
+  // No session — not logged in
+  return null
 }
 
 export async function getAllUsers(): Promise<User[]> {

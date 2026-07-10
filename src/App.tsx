@@ -55,6 +55,7 @@ export default function App() {
   const navigate = useNavigate()
   const [user, setUser] = useState<UserType | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dbMissing, setDbMissing] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scheduleAlert, setScheduleAlert] = useState(false)
   const { tab, setTab, nonce, bump } = useStore()
@@ -62,8 +63,19 @@ export default function App() {
   const loadMe = useCallback(async () => {
     try {
       const u = await getCurrentUser()
+      if (!u) {
+        // Not logged in — go to login page
+        navigate('/auth?mode=login')
+        return
+      }
       setUser(u)
-    } catch { setUser(null) }
+    } catch (e) {
+      if (e instanceof Error && e.message === 'DB_NOT_SETUP') {
+        setDbMissing(true)
+      } else {
+        navigate('/auth?mode=login')
+      }
+    }
     finally { setLoading(false) }
   }, [navigate])
 
@@ -99,21 +111,25 @@ export default function App() {
     </div>
   )
 
-  // DB not set up yet — show helpful setup screen
-  if (!user) return (
+  // DB not set up yet — show helpful setup screen (only on real DB error)
+  if (dbMissing) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-8 text-center">
       <div className="flag-bar h-1 w-full fixed top-0 left-0"/>
       <img src="/tz-coat-of-arms.png" alt="" className="h-16 w-16 object-contain mb-4"/>
       <h1 className="text-2xl font-black mb-2" style={{ color: 'var(--navy)' }}>ExamHub Tanzania</h1>
       <div className="max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-6 text-left space-y-4">
         <p className="font-semibold text-amber-800 flex items-center gap-2">⚠️ Database not set up yet</p>
-        <p className="text-sm text-amber-700">Run the SQL migrations in your Supabase project, then refresh.</p>
-        <ol className="text-sm text-amber-700 space-y-2 list-decimal list-inside">
-          <li>Open <strong>Supabase Dashboard → SQL Editor → New Query</strong></li>
-          <li>Paste and run <code className="bg-amber-100 px-1 rounded">team-vite/supabase/001_schema.sql</code></li>
-          <li>Paste and run <code className="bg-amber-100 px-1 rounded">002_storage.sql</code></li>
-          <li>Paste and run <code className="bg-amber-100 px-1 rounded">003_functions.sql</code></li>
-          <li>Paste and run <code className="bg-amber-100 px-1 rounded">004_features.sql</code></li>
+        <p className="text-sm text-amber-700">Run the SQL migrations in your Supabase project in order, then refresh.</p>
+        <ol className="text-sm text-amber-700 space-y-1.5 list-decimal list-inside">
+          <li>Open <strong>Supabase Dashboard → SQL Editor</strong></li>
+          <li>Run <code className="bg-amber-100 px-1 rounded">supabase/001_schema.sql</code></li>
+          <li>Run <code className="bg-amber-100 px-1 rounded">002_storage.sql</code></li>
+          <li>Run <code className="bg-amber-100 px-1 rounded">003_functions.sql</code></li>
+          <li>Run <code className="bg-amber-100 px-1 rounded">004_features.sql</code></li>
+          <li>Run <code className="bg-amber-100 px-1 rounded">005_teacher_profile.sql</code></li>
+          <li>Run <code className="bg-amber-100 px-1 rounded">006_forum.sql</code></li>
+          <li>Run <code className="bg-amber-100 px-1 rounded">007_payments_sessions.sql</code></li>
+          <li>Run <code className="bg-amber-100 px-1 rounded">008_auth_credentials.sql</code></li>
           <li>Refresh this page</li>
         </ol>
         <button onClick={() => window.location.reload()} className="w-full rounded-xl py-2.5 text-sm font-bold text-white" style={{ background: "var(--green)" }}>
@@ -122,6 +138,9 @@ export default function App() {
       </div>
     </div>
   )
+
+  // Not logged in — loadMe already redirected to /auth, render nothing
+  if (!user) return null
 
   const role = user?.role ?? 'student'
   const isPendingTeacher = role === 'teacher' && user?.verification_status !== 'approved'
