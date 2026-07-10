@@ -2,15 +2,15 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Library, Upload, FilePlus2, ClipboardList, PenSquare,
-  CheckCircle2, BarChart3, ShieldCheck, GraduationCap,
+  CheckCircle2, BarChart3, ShieldCheck,
   Menu, X, CalendarClock, Bell, Wifi, User as UserIcon, LogOut, MessageSquare, Video,
 } from 'lucide-react'
 import { Toaster, toast } from 'sonner'
-import { getCurrentUser, getAllUsers, setSessionUid, signOut, subscribeToScheduleUpdates } from '@/lib/api'
+import { getCurrentUser, signOut, subscribeToScheduleUpdates } from '@/lib/api'
 import type { User as UserType } from '@/lib/types'
 import { ROLE_LABEL } from '@/lib/types'
 import { useStore, type TabId } from '@/lib/store'
-import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/index'
+import { Button } from '@/components/ui/index'
 import { PapersLibrary } from '@/components/examhub/tabs/PapersLibrary'
 import { UploadPaper } from '@/components/examhub/tabs/UploadPaper'
 import { CreateExam } from '@/components/examhub/tabs/CreateExam'
@@ -54,7 +54,6 @@ const ROLE_COLOR: Record<string, string> = {
 export default function App() {
   const navigate = useNavigate()
   const [user, setUser] = useState<UserType | null>(null)
-  const [switchers, setSwitchers] = useState<UserType[]>([])
   const [loading, setLoading] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scheduleAlert, setScheduleAlert] = useState(false)
@@ -62,9 +61,8 @@ export default function App() {
 
   const loadMe = useCallback(async () => {
     try {
-      const [u, all] = await Promise.all([getCurrentUser(), getAllUsers()])
+      const u = await getCurrentUser()
       setUser(u)
-      setSwitchers(all as UserType[])
     } catch { setUser(null) }
     finally { setLoading(false) }
   }, [navigate])
@@ -79,14 +77,6 @@ export default function App() {
     })
     return () => { unsub() }
   }, [bump])
-
-  const handleSwitch = async (id: string) => {
-    setSessionUid(id)
-    await loadMe()
-    const target = switchers.find(s => s.id === id)
-    setTab('library')
-    toast.success(`Switched to ${target?.name} (${ROLE_LABEL[target?.role ?? '']})`)
-  }
 
   const handleLogout = async () => {
     await signOut()
@@ -169,20 +159,7 @@ export default function App() {
                 {ROLE_LABEL[role]}
               </span>
             )}
-            {/* User switcher */}
-            <Select value={user?.id ?? ''} onValueChange={handleSwitch}>
-              <SelectTrigger className="w-[140px] sm:w-[180px] bg-white/10 border-white/20 text-white hover:bg-white/15 text-sm h-8">
-                <SelectValue placeholder="Switch user"/>
-              </SelectTrigger>
-              <SelectContent>
-                {switchers.map(s => (
-                  <SelectItem key={s.id} value={s.id}>
-                    <span className="font-medium">{s.name}</span>
-                    <span className="ml-1 text-xs text-muted-foreground">· {ROLE_LABEL[s.role]}{''}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
             {/* Profile + logout */}
             <button onClick={() => navigate('/profile')} className="h-8 w-8 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors" title="Profile">
               <UserIcon className="h-4 w-4"/>
@@ -206,12 +183,7 @@ export default function App() {
               {n.label}
             </button>
           ))}
-          <div className="mt-auto rounded-lg border p-3 text-xs text-muted-foreground" style={{ borderColor: 'rgba(0,166,81,0.2)', background: 'rgba(0,166,81,0.04)' }}>
-            <p className="font-medium flex items-center gap-1.5" style={{ color: 'var(--navy)' }}>
-              <GraduationCap className="h-3.5 w-3.5"/> Role-based access
-            </p>
-            <p className="mt-1">Switch users to explore student, teacher, and admin views.</p>
-          </div>
+
         </aside>
 
         {/* Mobile drawer */}
