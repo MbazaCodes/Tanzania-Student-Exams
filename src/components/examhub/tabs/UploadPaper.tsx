@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Upload, FileText, X, Loader2, CheckCircle2, ExternalLink,
-  Scan, Wand2, ChevronDown, ChevronUp, AlertCircle, Eye, FilePlus2,
+  Scan, Wand2, ChevronDown, ChevronUp, AlertCircle, Eye, FilePlus2, Sparkles,
 } from 'lucide-react'
 import {
   Button, Input, Label, Textarea, Card, CardContent, CardHeader,
@@ -10,7 +10,8 @@ import {
 import { createPaper, uploadPaperFile, updatePaper, listSchools, createExam } from '@/lib/api'
 import { LEVELS, SUBJECTS, PAPER_TYPES, QUESTION_TYPES, type User, type QuestionType } from '@/lib/types'
 import { useStore } from '@/lib/store'
-import { ocrImage, extractPdfText, parseQuestionsFromText, type OcrProgress, type ParsedQuestion } from '@/lib/ocr'
+import { ocrImage, extractPdfText, parseQuestionsFromText, parseDocumentStructure, type OcrProgress, type ParsedQuestion, type ParsedDocument } from '@/lib/ocr'
+import { DocumentWizard } from './DocumentWizard'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -60,6 +61,7 @@ export function UploadPaper({ user }: { user: User }) {
   const [showRaw, setShowRaw]       = useState(false)
   const [parsedQs, setParsedQs]     = useState<QDraft[]>([])
   const [showQs, setShowQs]         = useState(false)
+  const [wizardDoc, setWizardDoc]   = useState<ParsedDocument | null>(null)
   const [buildingExam, setBuildingExam] = useState(false)
 
   useEffect(() => {
@@ -99,7 +101,8 @@ export function UploadPaper({ user }: { user: User }) {
       }
 
       setRawText(text)
-      const qs = parseQuestionsFromText(text)
+      const doc = parseDocumentStructure(text)
+      const qs = doc.questions
       if (qs.length > 0) {
         setParsedQs(qs.map((q, i) => ({
           ...q,
@@ -112,8 +115,9 @@ export function UploadPaper({ user }: { user: User }) {
           qtype: q.type as QuestionType,
           enabled: true,
         })))
-        setShowQs(true)
-        toast.success(`✓ Scanned! Found ${qs.length} question${qs.length > 1 ? 's' : ''} — add correct answers below, then create the exam.`)
+        // Auto-launch the guided wizard with the full document structure
+        setWizardDoc(doc)
+        toast.success(`✓ Scanned! Found ${qs.length} question${qs.length > 1 ? 's' : ''}. Let's turn them into a digital exam step-by-step.`)
       } else {
         toast.info('Scanned, but no questions auto-detected. Check the extracted text and add questions manually.')
         setShowRaw(true)
@@ -208,10 +212,10 @@ export function UploadPaper({ user }: { user: User }) {
         <CheckCircle2 className="h-7 w-7"/>
       </div>
       <div>
-        <p className="font-semibold text-lg">Paper uploaded successfully!</p>
+        <p className="font-semibold text-lg">Digital exam created!</p>
         <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-          "{title}" saved as draft. Publish from the Library when ready.
-          {fileUrl && <span className="block mt-1 text-emerald-600">✓ File in Supabase Storage</span>}
+          "{title}" is now a digital exam. Students can take it online and get auto-marked.
+          {fileUrl && <span className="block mt-1 text-emerald-600">✓ Original file saved too</span>}
         </p>
       </div>
       {fileUrl && (
@@ -222,8 +226,8 @@ export function UploadPaper({ user }: { user: User }) {
       )}
       <div className="flex flex-wrap gap-2 justify-center">
         <Button variant="outline" onClick={reset}>Upload another</Button>
-        <Button onClick={() => { sessionStorage.setItem('examhub:prefillPaperId', createdPaperId); setTab('create-exam') }}>
-          <FilePlus2 className="mr-2 h-4 w-4"/> Build Exam manually
+        <Button onClick={() => setTab('my-exams')}>
+          <FilePlus2 className="mr-2 h-4 w-4"/> Go to My Exams
         </Button>
         <Button variant="secondary" onClick={() => setTab('library')}>Go to Library</Button>
       </div>
@@ -234,12 +238,24 @@ export function UploadPaper({ user }: { user: User }) {
 
   return (
     <div className="space-y-5 max-w-4xl">
+      {/* Guided wizard modal */}
+      {wizardDoc && (
+        <DocumentWizard
+          parsed={wizardDoc}
+          defaultSubject={subject}
+          defaultLevel={level}
+          paperId={createdPaperId || undefined}
+          onComplete={() => { setWizardDoc(null); setDone(true); bump() }}
+          onCancel={() => setWizardDoc(null)}
+        />
+      )}
+
       <div>
         <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
           <Upload className="h-6 w-6 text-primary"/> Upload a Paper
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload PDF or image — OCR extracts questions automatically. Add answers, then create an exam in one click.
+          Upload a PDF or image. ExamHub scans it and walks you through turning it into a digital exam — header, instructions, then each question with correct answers and timers.
         </p>
       </div>
 
@@ -391,6 +407,12 @@ export function UploadPaper({ user }: { user: User }) {
                     ? <><Scan className="mr-2 h-4 w-4"/>Re-scan Document</>
                     : <><Scan className="mr-2 h-4 w-4"/>Scan Document for Questions</>}
               </Button>
+              {parsedQs.length > 0 && rawText && (
+                <Button className="w-full" onClick={() => setWizardDoc(parseDocumentStructure(rawText))}
+                  style={{ background: 'var(--green)' }}>
+                  <Sparkles className="mr-2 h-4 w-4"/>Convert to Digital Exam ({parsedQs.length} Qs)
+                </Button>
+              )}
               {file && (isPdf || isImage) && parsedQs.length === 0 && !ocrRunning && (
                 <p className="text-xs text-green-600 flex items-center gap-1">
                   <Wand2 className="h-3.5 w-3.5"/> Scanning starts automatically when you pick a file.

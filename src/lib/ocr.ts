@@ -185,3 +185,39 @@ export function parseQuestionsFromText(raw: string): ParsedQuestion[] {
     type: q.options.length >= 2 ? 'mcq' : essayKeywords.test(q.text) ? 'essay' : q.type,
   }))
 }
+
+export interface ParsedDocument {
+  header: string        // title / exam name at top of document
+  instructions: string  // instructions block (before first question)
+  questions: ParsedQuestion[]
+}
+
+/**
+ * Splits a document into header + instructions + questions.
+ * Header = text before "INSTRUCTIONS" or before the first question.
+ * Instructions = text between an INSTRUCTIONS marker and the first question.
+ */
+export function parseDocumentStructure(raw: string): ParsedDocument {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
+  const qPattern = /^(?:question\s+)?(\d+)[.)]\s*/i
+  const instrPattern = /^(instructions?|maelekezo|maagizo)\b/i
+
+  let firstQIdx = lines.findIndex(l => qPattern.test(l))
+  if (firstQIdx === -1) firstQIdx = lines.length
+
+  let instrIdx = lines.findIndex(l => instrPattern.test(l))
+  if (instrIdx > firstQIdx) instrIdx = -1  // instructions must come before questions
+
+  // Header = everything before instructions (or before first question if no instructions)
+  const headerEnd = instrIdx !== -1 ? instrIdx : firstQIdx
+  const header = lines.slice(0, Math.min(headerEnd, 6)).join(' ').trim()
+
+  // Instructions = from instrIdx to firstQIdx
+  const instructions = instrIdx !== -1
+    ? lines.slice(instrIdx, firstQIdx).join('\n').trim()
+    : ''
+
+  const questions = parseQuestionsFromText(lines.slice(firstQIdx).join('\n'))
+
+  return { header, instructions, questions }
+}
