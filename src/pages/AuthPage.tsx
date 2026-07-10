@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Eye, EyeOff, Loader2, ArrowLeft, CheckCircle2, Clock, ChevronDown } from 'lucide-react'
 import { signIn, signUp, resetPassword, updateUserProfile, submitVerificationRequest } from '@/lib/api'
+import { supabaseAdmin } from '@/lib/supabase'
 import { ROLE_LABEL, ADMIN_EMAIL, ADMIN_UID, SUBJECTS, LEVELS, TZ_REGIONS, TZ_REGIONS_DISTRICTS } from '@/lib/types'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -125,16 +126,22 @@ export function AuthPage() {
 
       const finalRole = (email === ADMIN_EMAIL || authUser.id === ADMIN_UID) ? 'super_admin' : role
 
-      // Update profile with teacher fields + finalRole
-      await updateUserProfile(authUser.id, {
-        role: finalRole,
-        phone: phone || null,
-        school_name: schoolName || null,
-        region: region || null,
-        district: district || null,
-        teaching_levels: teachingLevels.length ? JSON.stringify(teachingLevels) : null,
-        subjects_taught: subjectsTaught.length ? JSON.stringify(subjectsTaught) : null,
-      } as Parameters<typeof updateUserProfile>[1])
+      // Update role if changed to super_admin
+      if (finalRole !== role) {
+        await updateUserProfile(authUser.id, { role: finalRole } as Partial<import('@/lib/types').User>)
+      }
+
+      // Update teacher-specific fields (non-critical — silently skip if columns missing)
+      if (role === 'teacher' && (phone || schoolName || region || teachingLevels.length || subjectsTaught.length)) {
+        await supabaseAdmin.from('users').update({
+          phone: phone || null,
+          school_name: schoolName || null,
+          region: region || null,
+          district: district || null,
+          teaching_levels: teachingLevels.length ? JSON.stringify(teachingLevels) : null,
+          subjects_taught: subjectsTaught.length ? JSON.stringify(subjectsTaught) : null,
+        }).eq('id', authUser.id).then(() => {}).catch(() => {})
+      }
 
       if (finalRole === 'teacher') {
         const msgParts = [
@@ -150,7 +157,7 @@ export function AuthPage() {
           role: finalRole,
           school_name: schoolName || undefined,
           message: msgParts.join(' | ') || undefined,
-        })
+        }).catch(() => {}) // non-critical
       }
 
       setRegisteredName(name)
