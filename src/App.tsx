@@ -119,19 +119,14 @@ export default function App() {
       <h1 className="text-2xl font-black mb-2" style={{ color: 'var(--navy)' }}>ExamHub Tanzania</h1>
       <div className="max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-6 text-left space-y-4">
         <p className="font-semibold text-amber-800 flex items-center gap-2">⚠️ Database not set up yet</p>
-        <p className="text-sm text-amber-700">Run the SQL migrations in your Supabase project in order, then refresh.</p>
+        <p className="text-sm text-amber-700">Run the setup SQL in your Supabase project, then refresh.</p>
         <ol className="text-sm text-amber-700 space-y-1.5 list-decimal list-inside">
-          <li>Open <strong>Supabase Dashboard → SQL Editor</strong></li>
-          <li>Run <code className="bg-amber-100 px-1 rounded">supabase/001_schema.sql</code></li>
-          <li>Run <code className="bg-amber-100 px-1 rounded">002_storage.sql</code></li>
-          <li>Run <code className="bg-amber-100 px-1 rounded">003_functions.sql</code></li>
-          <li>Run <code className="bg-amber-100 px-1 rounded">004_features.sql</code></li>
-          <li>Run <code className="bg-amber-100 px-1 rounded">005_teacher_profile.sql</code></li>
-          <li>Run <code className="bg-amber-100 px-1 rounded">006_forum.sql</code></li>
-          <li>Run <code className="bg-amber-100 px-1 rounded">007_payments_sessions.sql</code></li>
-          <li>Run <code className="bg-amber-100 px-1 rounded">008_auth_credentials.sql</code></li>
+          <li>Open <strong>Supabase Dashboard → SQL Editor → New Query</strong></li>
+          <li>Paste the entire contents of <code className="bg-amber-100 px-1 rounded">supabase/000_COMPLETE_SETUP.sql</code></li>
+          <li>Click <strong>Run</strong> (sets up everything in one go)</li>
           <li>Refresh this page</li>
         </ol>
+        <p className="text-xs text-amber-600">Login after setup: <strong>admin@tems.go.tz</strong> / <strong>admin123</strong></p>
         <button onClick={() => window.location.reload()} className="w-full rounded-xl py-2.5 text-sm font-bold text-white" style={{ background: "var(--green)" }}>
           Refresh after running SQL
         </button>
